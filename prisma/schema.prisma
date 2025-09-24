@@ -1,0 +1,192 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  role            Role          @default(MEMBER)
+  firstName       String?
+  lastName        String?
+  phone           String?
+  address         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  applications    Application[]
+  sentMessages    Message[]     @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
+  auditLogs       AuditLog[]
+
+  @@index([email])
+  Member Member[]
+  TimelineEvent TimelineEvent[]
+}
+
+enum Role {
+  PUBLIC
+  MEMBER
+  ADMIN
+  SUPERADMIN
+}
+
+model Application {
+  id              String          @id @default(cuid())
+  userId          String
+  status          AppStatus       @default(DRAFT)
+  data            Json            // full form payload (versioned)
+  version         Int             @default(1)
+  submissionHash  String?
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  lastPdfUrl      String?
+  timeline        TimelineEvent[]
+  uploads         Upload[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum AppStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  INFO_REQUESTED
+  APPROVED
+  REJECTED
+}
+
+model Upload {
+  id             String       @id @default(cuid())
+  applicationId  String
+  kind           UploadKind
+  url            String       // Blob/Storage URL
+  filename       String
+  mime           String
+  sizeBytes      Int
+  createdAt      DateTime     @default(now())
+
+  application    Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([kind])
+}
+
+enum UploadKind {
+  GOV_ID
+  PROOF_ADDRESS
+  SUPPORTING
+  OTHER
+}
+
+model TimelineEvent {
+  id             String        @id @default(cuid())
+  applicationId  String
+  actorUserId    String?
+  type           TimelineType
+  note           String?
+  createdAt      DateTime      @default(now())
+
+  application    Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actor          User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+  @@index([actorUserId])
+  @@index([type])
+}
+
+enum TimelineType {
+  CREATED
+  SUBMITTED
+  STATUS_CHANGED
+  ADMIN_NOTE
+  MEMBER_MESSAGE
+  ADMIN_MESSAGE
+  PDF_GENERATED
+}
+
+model Member {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  number    String  @unique  // official member number
+  joinedAt  DateTime
+  notes     String?
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model NewsPost {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  bodyMd      String
+  tags        String[]
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published, publishedAt])
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  title       String
+  url         String
+  visibility  DocVisibility  @default(PUBLIC)
+  createdAt   DateTime       @default(now())
+
+  @@index([visibility])
+}
+
+enum DocVisibility {
+  PUBLIC
+  MEMBERS
+  PRIVATE
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  fromUserId  String?
+  toUserId    String?
+  subject     String
+  body        String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  fromUser    User?     @relation("SentMessages", fields: [fromUserId], references: [id], onDelete: SetNull)
+  toUser      User?     @relation("ReceivedMessages", fields: [toUserId], references: [id], onDelete: SetNull)
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([isRead, createdAt])
+}
+
+model AuditLog {
+  id        String    @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  createdAt DateTime  @default(now())
+
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entity, entityId])
+}
