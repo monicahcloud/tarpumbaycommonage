@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/alt-text */
 import { prisma } from "@/lib/prisma";
 import {
   pdf,
@@ -9,6 +10,7 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
+export const runtime = "nodejs";
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -68,13 +70,13 @@ const styles = StyleSheet.create({
   },
 });
 
-type Params = { params: { id: string } };
-
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   const app = await prisma.application.findUnique({ where: { id: params.id } });
   if (!app) return new Response("Not Found", { status: 404 });
 
-  // Use an absolute URL for the logo in /public
   const origin = new URL(req.url).origin;
   const logoUrl = `${origin}/logo.png`;
 

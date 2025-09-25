@@ -104,9 +104,9 @@ export default function Footer() {
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" aria-hidden="true" />
                 <a
-                  href="mailto:info@tarpumbaycommunity.bs"
+                  href="mailto:tbaycommonagecontact@gmail.com"
                   className="transition-colors hover:text-foreground">
-                  info@tarpumbaycommunity.bs
+                  tbaycommonagecontact@gmail.com
                 </a>
               </div>
               <div className="flex items-center space-x-2">

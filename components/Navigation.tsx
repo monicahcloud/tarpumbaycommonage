@@ -20,7 +20,7 @@ const Navigation = () => {
               <Image
                 src={logoImage}
                 alt="Tarpum Bay Commonage Committee logo"
-                width={300}
+                width={250}
                 height={56}
                 className="rounded-md"
                 priority
