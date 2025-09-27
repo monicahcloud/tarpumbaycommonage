@@ -1,19 +1,24 @@
-// app/(auth)/sign-up/[[...sign-up]]/page.tsx
 import { SignUp } from "@clerk/nextjs";
 
-type Props = {
-  searchParams?:
-    | { redirect?: string; redirect_url?: string }
-    | Promise<{ redirect?: string; redirect_url?: string }>;
-};
+// Next 15: searchParams is a Promise
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export default async function Page({ searchParams }: Props) {
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const sp = await searchParams;
-  const redirect = sp?.redirect ?? sp?.redirect_url ?? "/portal";
+
+  const first = (v: string | string[] | undefined) =>
+    Array.isArray(v) ? v[0] : v;
+
+  // support ?redirect_url=... (Clerk) or ?redirect=...
+  const dest = first(sp?.redirect_url) || first(sp?.redirect) || "/portal";
 
   return (
-    <div className="min-h-screen grid place-items-center p-6">
-      <SignUp afterSignInUrl={redirect} afterSignUpUrl={redirect} />
+    <div className="mx-auto max-w-md p-6">
+      <SignUp afterSignInUrl={dest} afterSignUpUrl={dest} />
     </div>
   );
 }

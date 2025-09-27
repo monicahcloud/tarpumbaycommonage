@@ -1,12 +1,15 @@
+// app/(app)/portal/application/[id]/uploads/page.tsx  ← or "applications" (see note below)
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { BadgeCheck, FileDown, Trash2, UploadCloud } from "lucide-react";
+import { BadgeCheck, FileDown, UploadCloud } from "lucide-react";
 import { UploadButton } from "./upload.client";
 import { DeleteButton } from "./delete.client";
 import { AttachmentKind } from "@prisma/client";
+
+type Params = Promise<{ id: string }>;
 
 function fmtDate(d: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -60,37 +63,30 @@ const REQUIRED: { kind: AttachmentKind; label: string; accept?: string }[] = [
   },
 ];
 
-export default async function UploadsPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function UploadsPage({ params }: { params: Params }) {
+  const { id } = await params; // ✅ Next 15: await params
   const { userId } = await auth();
-  if (!userId) redirect("/sign-in?redirect_url=/portal"); // protected by layout, but safe
+  if (!userId) redirect("/sign-in?redirect_url=/portal");
 
-  // Verify ownership of application
   const app = await prisma.application.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { user: true, attachments: true },
   });
   if (!app) return notFound();
 
-  const owner = await prisma.user.findUnique({ where: { id: app.userId } });
   const me = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!owner || !me || owner.id !== me.id) return notFound();
+  if (!me || app.userId !== me.id) return notFound();
 
   const attachments = app.attachments.sort(
     (a, b) => +b.createdAt - +a.createdAt
   );
 
-  // Required doc completion
   const byKind = new Map<AttachmentKind, number>();
   for (const a of attachments)
     byKind.set(a.kind, (byKind.get(a.kind) ?? 0) + 1);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8">
-      {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Uploads</h1>
@@ -116,7 +112,6 @@ export default async function UploadsPage({
         </div>
       </div>
 
-      {/* Required documents grid */}
       <section className="grid gap-4 sm:grid-cols-2">
         {REQUIRED.map((req) => {
           const count = byKind.get(req.kind) ?? 0;
@@ -157,7 +152,6 @@ export default async function UploadsPage({
         })}
       </section>
 
-      {/* Other uploads + list */}
       <section className="rounded-xl border bg-white/70 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold">Other documents</h2>
