@@ -7,24 +7,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id         String         @id @default(cuid())
+  clerkId    String         @unique
+  email      String         @unique
+  firstName  String?
+  lastName   String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  applications Application[]
+}
+
 model Application {
-  id         String   @id @default(cuid())
-  // basic fields for v1 (add more later)
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // v1 fields
   firstName  String
   lastName   String
   email      String
   phone      String?
   dob        DateTime?
   address    String?
-  ancestry   String?   // free text for now (parent/grandparent info)
+  ancestry   String?
   purpose    String
-  signature  String?   // dataURL string (optional)
-  status     AppStatus @default(SUBMITTED)
+  signature  String?        // or future: signatureImageUrl (Blob)
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  status     AppStatus  @default(DRAFT)
+  submittedAt DateTime?
+  updatedAt  DateTime   @updatedAt
+  createdAt  DateTime   @default(now())
+
+  // convenience
+  attachments Attachment[]
+
+  @@index([userId])
+}
+
+model Attachment {
+  id            String   @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  kind          AttachmentKind
+  url           String
+  contentType   String
+  size          Int
+  createdAt     DateTime @default(now())
+
+  // Optional descriptive name
+  label         String?
 }
 
 enum AppStatus {
+  DRAFT
   SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum AttachmentKind {
+  ID_PASSPORT
+  BIRTH_CERT
+  DRAWINGS
+  PROOF_OF_ADDRESS
+  OTHER
 }

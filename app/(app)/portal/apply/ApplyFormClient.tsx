@@ -1,25 +1,29 @@
+// components/ApplyFormClient.tsx
 "use client";
-
-import { useState } from "react";
+// import { useRouter } from "next/navigation";
+// import { useAuth } from "@clerk/nextjs";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// ----- Validation -----
+// -------------------- Validation --------------------
 const schema = z.object({
-  // Step 1
+  // Step 1 — Applicant
   firstName: z.string().min(1, "Required"),
   middleName: z.string().optional(),
   lastName: z.string().min(1, "Required"),
   dob: z.string().optional(), // YYYY-MM-DD
-  address: z.string().optional(),
   email: z.string().email("Invalid email"),
-  phoneHome: z.string().optional(),
-  phoneWork: z.string().optional(),
-  phoneCell: z.string().optional(),
 
-  // Step 2 (heritage & purpose)
+  addressLine1: z.string().min(1, "Required"),
+  addressLine2: z.string().optional(),
+
+  phone: z.string().min(3, "Enter a phone"),
+  phoneType: z.enum(["home", "cell", "work"]),
+
+  // Step 2 — Heritage & Purpose
   parentName: z.string().optional(),
   parentBirthdate: z.string().optional(),
   grandparentName: z.string().optional(),
@@ -28,7 +32,7 @@ const schema = z.object({
   greatGrandparentBirthdate: z.string().optional(),
   purpose: z.string().min(3, "Tell us your intended use"),
 
-  // Step 3 (consents)
+  // Step 3 — Consents
   agreeRules: z.literal(true, {
     errorMap: () => ({
       message: "You must confirm you read and agree to the rules.",
@@ -46,10 +50,13 @@ const schema = z.object({
   signDate: z.string().optional(),
 });
 
-type FormData = z.infer<typeof schema>;
+export type ApplyFormData = z.infer<typeof schema>;
 
-export default function ApplyPage() {
-  const [step, setStep] = useState(1);
+// -------------------- Component --------------------
+export default function ApplyFormClient() {
+  // const router = useRouter();
+  // const { isSignedIn } = useAuth();
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 4 = Preview
   const [applicationId, setApplicationId] = useState<string | null>(null);
 
   const {
@@ -58,26 +65,47 @@ export default function ApplyPage() {
     trigger,
     formState: { errors, isSubmitting },
     getValues,
-  } = useForm<FormData>({
+    watch,
+  } = useForm<ApplyFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      phoneType: "cell",
       signDate: new Date().toISOString().slice(0, 10),
     },
   });
 
-  // ----- Step Navigation -----
+  // live values for preview
+  const watchAll = watch();
+
+  // Build ancestry combined field for API + PDF
+  const ancestry = useMemo(() => {
+    const v = watchAll; // already reactive
+    return [
+      v.parentName && `Parent: ${v.parentName} (${v.parentBirthdate || "—"})`,
+      v.grandparentName &&
+        `Grandparent: ${v.grandparentName} (${v.grandparentBirthdate || "—"})`,
+      v.greatGrandparentName &&
+        `Great-Grandparent: ${v.greatGrandparentName} (${
+          v.greatGrandparentBirthdate || "—"
+        })`,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+  }, [watchAll]);
+
+  // ------------- Step navigation -------------
   const next = async () => {
-    // validate current step's fields before proceeding
-    const fieldsByStep: Record<number, (keyof FormData)[]> = {
+    const fieldsByStep: Record<number, (keyof ApplyFormData)[]> = {
       1: [
         "firstName",
+        "middleName",
         "lastName",
-        "email",
         "dob",
-        "address",
-        "phoneHome",
-        "phoneWork",
-        "phoneCell",
+        "email",
+        "addressLine1",
+        "addressLine2",
+        "phone",
+        "phoneType",
       ],
       2: [
         "parentName",
@@ -97,39 +125,33 @@ export default function ApplyPage() {
       ],
     };
     const ok = await trigger(fieldsByStep[step], { shouldFocus: true });
-    if (ok) setStep((s) => Math.min(3, s + 1));
+    if (!ok) return;
+    // go to next step, or to Preview when leaving step 3
+    if (step < 3) setStep((s) => (s + 1) as typeof step);
+    else setStep(4);
   };
-  const prev = () => setStep((s) => Math.max(1, s - 1));
 
-  // ----- Submit -----
-  async function onSubmit(data: FormData) {
-    // flatten heritage into a single field for v1 (matches our minimal DB/API)
-    const ancestry = [
-      data.parentName &&
-        `Parent: ${data.parentName} (${data.parentBirthdate || "—"})`,
-      data.grandparentName &&
-        `Grandparent: ${data.grandparentName} (${
-          data.grandparentBirthdate || "—"
-        })`,
-      data.greatGrandparentName &&
-        `Great-Grandparent: ${data.greatGrandparentName} (${
-          data.greatGrandparentBirthdate || "—"
-        })`,
-    ]
-      .filter(Boolean)
-      .join(" | ");
+  const prev = () => {
+    if (step === 1) return;
+    if (step === 4) setStep(3);
+    else setStep((s) => (s - 1) as typeof step);
+  };
 
+  // ------------- Submit -------------
+  async function onSubmit(data: ApplyFormData) {
     // map to minimal API we created earlier
     const payload = {
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
-      phone: data.phoneCell || data.phoneHome || data.phoneWork || "",
+      phone: `${data.phone} (${data.phoneType})`,
       dob: data.dob || undefined,
-      address: data.address || undefined,
+      address: `${data.addressLine1}${
+        data.addressLine2 ? `, ${data.addressLine2}` : ""
+      }`,
       ancestry: ancestry || undefined,
       purpose: data.purpose,
-      signature: data.signature, // typed signature for now
+      signature: data.signature,
     };
 
     const res = await fetch("/api/applications", {
@@ -138,14 +160,15 @@ export default function ApplyPage() {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      alert("Submission failed. Please try again.");
+      const text = await res.text();
+      alert(`Submission failed. (${res.status}). ${text}`);
       return;
     }
     const { id } = await res.json();
     setApplicationId(id);
   }
 
-  // ----- Success State -----
+  // ------------- Success -------------
   if (applicationId) {
     return (
       <div className="mx-auto grid max-w-5xl gap-6 p-6 md:grid-cols-[3fr_2fr]">
@@ -168,30 +191,32 @@ export default function ApplyPage() {
             </Link>
           </div>
         </div>
-
         <AsidePanel />
       </div>
     );
   }
 
-  // ----- Form UI -----
+  // ------------- Form -------------
   return (
     <div className="mx-auto grid max-w-5xl gap-6 p-6 md:grid-cols-[3fr_2fr]">
       {/* Main Card */}
       <div className="rounded-lg border bg-card p-6 shadow-sm">
-        {/* Stepper */}
+        {/* Stepper / Breadcrumb */}
         <ol className="mb-6 flex items-center gap-4 text-sm">
           <StepDot active={step >= 1} text="Applicant Info" />
           <div className="h-px flex-1 bg-border" />
           <StepDot active={step >= 2} text="Heritage & Purpose" />
           <div className="h-px flex-1 bg-border" />
-          <StepDot active={step >= 3} text="Review & Sign" />
+          <StepDot active={step >= 3} text="Consent" />
+          <div className="h-px flex-1 bg-border" />
+          <StepDot active={step >= 4} text="Preview" />
         </ol>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {step === 1 && (
             <section className="space-y-4">
               <h2 className="text-lg font-semibold">Applicant Information</h2>
+
               <div className="grid gap-4 md:grid-cols-3">
                 <Field label="First Name" error={errors.firstName?.message}>
                   <input
@@ -230,32 +255,61 @@ export default function ApplyPage() {
                     {...register("email")}
                   />
                 </Field>
-                <Field label="Mailing Address">
+              </div>
+
+              {/* Mailing Address — two lines */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field
+                  label="Mailing Address (Line 1)"
+                  error={errors.addressLine1?.message}>
                   <input
                     className="w-full rounded border p-2"
-                    {...register("address")}
+                    {...register("addressLine1")}
+                  />
+                </Field>
+                <Field label="Mailing Address (Line 2)">
+                  <input
+                    className="w-full rounded border p-2"
+                    {...register("addressLine2")}
                   />
                 </Field>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <Field label="Phone (Home)">
+              {/* Phone with type selector */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Phone Number" error={errors.phone?.message}>
                   <input
                     className="w-full rounded border p-2"
-                    {...register("phoneHome")}
+                    {...register("phone")}
                   />
                 </Field>
-                <Field label="Phone (Work)">
-                  <input
-                    className="w-full rounded border p-2"
-                    {...register("phoneWork")}
-                  />
-                </Field>
-                <Field label="Phone (Cell)">
-                  <input
-                    className="w-full rounded border p-2"
-                    {...register("phoneCell")}
-                  />
+                <Field label="Phone Type">
+                  <div className="flex items-center gap-4">
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        value="home"
+                        {...register("phoneType")}
+                      />
+                      Home
+                    </label>
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        value="cell"
+                        {...register("phoneType")}
+                      />
+                      Cell
+                    </label>
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        value="work"
+                        {...register("phoneType")}
+                      />
+                      Work
+                    </label>
+                  </div>
                 </Field>
               </div>
             </section>
@@ -325,7 +379,7 @@ export default function ApplyPage() {
 
           {step === 3 && (
             <section className="space-y-4">
-              <h2 className="text-lg font-semibold">Review & Sign</h2>
+              <h2 className="text-lg font-semibold">Consent & Sign</h2>
               <div className="space-y-2 rounded-md border p-3 text-sm">
                 <ConsentItem
                   id="agreeRules"
@@ -383,23 +437,72 @@ export default function ApplyPage() {
                   />
                 </Field>
               </div>
-
-              {/* Quick review summary */}
-              <div className="rounded-md border p-3 text-sm">
-                <p className="font-medium">Quick Review</p>
-                <p className="text-muted-foreground">
-                  {getValues("firstName")} {getValues("lastName")} •{" "}
-                  {getValues("email")} •{" "}
-                  {getValues("phoneCell") ||
-                    getValues("phoneHome") ||
-                    getValues("phoneWork") ||
-                    "No phone provided"}
-                </p>
-              </div>
             </section>
           )}
 
-          {/* Navigation Buttons */}
+          {step === 4 && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-semibold">Preview</h2>
+              <div className="rounded-md border p-4 text-sm space-y-2">
+                <Row
+                  label="Name"
+                  value={`${getValues("firstName")} ${
+                    getValues("middleName") || ""
+                  } ${getValues("lastName")}`
+                    .replace(/\s+/g, " ")
+                    .trim()}
+                />
+                <Row label="Email" value={getValues("email")} />
+                <Row label="DOB" value={getValues("dob") || "—"} />
+                <Row
+                  label="Address"
+                  value={`${getValues("addressLine1")}${
+                    getValues("addressLine2")
+                      ? `, ${getValues("addressLine2")}`
+                      : ""
+                  }`}
+                />
+                <Row
+                  label="Phone"
+                  value={`${getValues("phone")} (${getValues("phoneType")})`}
+                />
+                <hr className="my-2" />
+                <Row
+                  label="Parent"
+                  value={`${getValues("parentName") || "—"} (${
+                    getValues("parentBirthdate") || "—"
+                  })`}
+                />
+                <Row
+                  label="Grandparent"
+                  value={`${getValues("grandparentName") || "—"} (${
+                    getValues("grandparentBirthdate") || "—"
+                  })`}
+                />
+                <Row
+                  label="Great-Grandparent"
+                  value={`${getValues("greatGrandparentName") || "—"} (${
+                    getValues("greatGrandparentBirthdate") || "—"
+                  })`}
+                />
+                <hr className="my-2" />
+                <Row label="Purpose" value={getValues("purpose")} />
+                <hr className="my-2" />
+                <Row
+                  label="Signature"
+                  value={`${getValues("signature")} (${
+                    getValues("signDate") || "—"
+                  })`}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Please review carefully. Submitting will save this application
+                and generate a PDF.
+              </p>
+            </section>
+          )}
+
+          {/* Nav buttons */}
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -409,7 +512,7 @@ export default function ApplyPage() {
               Back
             </button>
 
-            {step < 3 ? (
+            {step < 4 ? (
               <button
                 type="button"
                 onClick={next}
@@ -428,13 +531,13 @@ export default function ApplyPage() {
         </form>
       </div>
 
-      {/* Right Panel */}
+      {/* Right column */}
       <AsidePanel />
     </div>
   );
 }
 
-/* ---------- Small UI helpers ---------- */
+/* -------------------- small UI helpers -------------------- */
 
 function Field({
   label,
@@ -476,7 +579,7 @@ function ConsentItem({
   label,
   error,
 }: {
-  id: keyof FormData;
+  id: keyof ApplyFormData;
   register: ReturnType<typeof useForm>["register"];
   label: React.ReactNode;
   error?: string;
@@ -489,6 +592,15 @@ function ConsentItem({
         {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
       </div>
     </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <p className="flex gap-2">
+      <span className="min-w-44 font-medium">{label}:</span>
+      <span className="flex-1">{value || "—"}</span>
+    </p>
   );
 }
 

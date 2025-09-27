@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable jsx-a11y/alt-text */
 import { prisma } from "@/lib/prisma";
 import {
@@ -11,15 +12,11 @@ import {
 } from "@react-pdf/renderer";
 
 export const runtime = "nodejs";
+
 const styles = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontSize: 12,
-    fontFamily: "Helvetica",
-    lineHeight: 1.5,
-  },
+  page: { padding: 40, fontSize: 12, fontFamily: "Helvetica", lineHeight: 1.5 },
   header: {
-    alignItems: "center", // centers children horizontally
+    alignItems: "center",
     marginBottom: 20,
     paddingBottom: 12,
     borderBottom: "2px solid #333",
@@ -31,11 +28,7 @@ const styles = StyleSheet.create({
     color: "#000",
     marginBottom: 2,
   },
-  headerTitle: {
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  headerTitle: { textAlign: "center", fontSize: 16, fontWeight: "bold" },
   headerSubtitle: {
     textAlign: "center",
     fontSize: 14,
@@ -50,11 +43,7 @@ const styles = StyleSheet.create({
     color: "#004080",
     textDecoration: "underline",
   },
-  row: {
-    marginBottom: 4,
-    flexDirection: "row",
-    justifyContent: "flex-start",
-  },
+  row: { marginBottom: 4, flexDirection: "row", justifyContent: "flex-start" },
   label: { fontWeight: "bold", marginRight: 6 },
   value: { flex: 1 },
   footer: {
@@ -70,11 +59,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const app = await prisma.application.findUnique({ where: { id: params.id } });
+export async function GET(req: Request, context: any) {
+  const id = context?.params?.id as string;
+
+  const app = await prisma.application.findUnique({ where: { id } });
   if (!app) return new Response("Not Found", { status: 404 });
 
   const origin = new URL(req.url).origin;

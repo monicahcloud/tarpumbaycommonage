@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 
 // Background and logo in /public/images
 import heroImage from "../app/assets/hero.png";
+import Link from "next/link";
 
 const HeroSection = () => {
   return (
@@ -48,15 +49,22 @@ const HeroSection = () => {
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-          <Button size="lg" className="btn-hero text-lg px-8 py-6 group">
-            Apply for Commonage
-            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-          </Button>
           <Button
+            asChild
+            size="lg"
+            className="btn-hero text-lg px-8 py-6 group">
+            <Link href="/apply">
+              Apply for Commonage
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
+
+          <Button
+            asChild
             variant="outline"
             size="lg"
             className="text-lg px-8 py-6 bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-            Learn More
+            <Link href="/about">Learn More</Link>
           </Button>
         </div>
 

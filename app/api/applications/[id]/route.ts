@@ -1,10 +1,15 @@
+// app/api/applications/[id]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Params = { params: { id: string } };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(_req: Request, context: any) {
+  const id = context?.params?.id as string;
+  const app = await prisma.application.findUnique({ where: { id } });
 
-export async function GET(_req: Request, { params }: Params) {
-  const app = await prisma.application.findUnique({ where: { id: params.id } });
-  if (!app) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!app) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   return NextResponse.json(app);
 }
