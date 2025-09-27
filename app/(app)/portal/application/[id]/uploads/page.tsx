@@ -102,14 +102,14 @@ export default async function UploadsPage({ params }: { params: Params }) {
           <p className="mt-1 text-sm text-slate-600">
             Application{" "}
             <span className="font-mono text-xs text-slate-600">
-              #{app.id.slice(0, 8)}
+              #{app.id.slice(0, 30)}
             </span>{" "}
             <span className="mx-2">•</span> <StatusBadge status={app.status} />
           </p>
         </div>
         <div className="flex gap-2">
           <Link
-            href="/portal/applications"
+            href="/portal/application"
             className="rounded border px-3 py-2 text-sm hover:bg-slate-50">
             Back to My Application
           </Link>

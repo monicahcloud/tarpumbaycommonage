@@ -38,8 +38,8 @@ export default async function ApplicationsPage() {
       <div className="max-w-3xl">
         <h1 className="text-2xl font-semibold">My Application</h1>
         <p className="mt-2 text-slate-600">
-          We couldn’t find your member record yet. Try reloading this page or
-          signing out and back in.
+          We couldn&apos;t find your member record yet. Try reloading this page
+          or signing out and back in.
         </p>
       </div>
     );
@@ -99,7 +99,7 @@ export default async function ApplicationsPage() {
               <p className="font-medium">
                 Application{" "}
                 <span className="font-mono text-xs text-slate-600">
-                  #{app.id.slice(0, 8)}
+                  #{app.id.slice(0, 30)}
                 </span>
               </p>
               <p className="text-sm text-slate-600">
