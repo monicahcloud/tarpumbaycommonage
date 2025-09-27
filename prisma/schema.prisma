@@ -54,7 +54,7 @@ model Attachment {
   kind          AttachmentKind
   url           String
   contentType   String
-  size          Int
+  size          Int?
   createdAt     DateTime @default(now())
 
   // Optional descriptive name

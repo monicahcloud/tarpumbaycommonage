@@ -34,12 +34,14 @@ export default function Navigation() {
             <SignedOut>
               <SignInButton
                 mode="modal"
-                afterSignInUrl="/portal"
-                afterSignUpUrl="/portal">
+                forceRedirectUrl="/portal" // where to go after successful sign-in/up
+                fallbackRedirectUrl="/portal" // where to go if Clerk can’t infer a return url
+              >
                 <Button variant="outline" size="sm">
                   Member Portal
                 </Button>
               </SignInButton>
+
               <Button asChild className="btn-hero" size="sm">
                 <Link href="/portal/apply">Apply Now</Link>
               </Button>
@@ -71,12 +73,13 @@ export default function Navigation() {
               <SignedOut>
                 <SignInButton
                   mode="modal"
-                  afterSignInUrl="/portal"
-                  afterSignUpUrl="/portal">
+                  forceRedirectUrl="/portal"
+                  fallbackRedirectUrl="/portal">
                   <Button className="w-full" size="sm" onClick={closeMenu}>
                     Sign In
                   </Button>
                 </SignInButton>
+
                 <Button
                   asChild
                   className="btn-hero w-full"

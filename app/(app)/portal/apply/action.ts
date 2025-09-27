@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/apply/actions.ts
 "use server";
 import { z } from "zod";
@@ -10,7 +9,7 @@ const schema = z.object({
     middle: z.string().optional(),
     last: z.string().min(1),
   }),
-  dob: z.string(), // ISO
+  dob: z.string(), // ISO date string
   address: z.string().min(3),
   phones: z.object({
     home: z.string().optional(),
@@ -30,18 +29,53 @@ const schema = z.object({
   agreeRules: z
     .boolean()
     .refine((v) => v === true, "You must agree to the rules."),
-  signature: z.string().min(10), // data URL or vector
+  signature: z.string().min(2),
 });
 
-export async function submitApplication(userId: string, data: unknown) {
-  const parsed = schema.parse(data);
+export async function submitApplication(userId: string, raw: unknown) {
+  const v = schema.parse(raw);
+
+  // Choose a single phone to store (prioritize cell -> home -> work)
+  const phone = v.phones.cell || v.phones.home || v.phones.work || undefined;
+
+  // Combine ancestry into one string column you already have
+  const ancestry =
+    [
+      v.ancestry.parentName &&
+        `Parent: ${v.ancestry.parentName} (${
+          v.ancestry.parentBirthdate || "—"
+        })`,
+      v.ancestry.grandparentName &&
+        `Grandparent: ${v.ancestry.grandparentName} (${
+          v.ancestry.grandparentBirthdate || "—"
+        })`,
+      v.ancestry.greatGrandparentName &&
+        `Great-Grandparent: ${v.ancestry.greatGrandparentName} (${
+          v.ancestry.greatGrandparentBirthdate || "—"
+        })`,
+    ]
+      .filter(Boolean)
+      .join(" | ") || null;
+
   const app = await prisma.application.create({
     data: {
       userId,
       status: "SUBMITTED",
-      data: parsed as any,
-      timeline: { create: { type: "SUBMITTED" } },
+      submittedAt: new Date(),
+
+      // flattened fields → your columns
+      firstName: v.name.first,
+      lastName: v.name.last,
+      email: v.email,
+      phone: phone ?? null,
+      dob: v.dob ? new Date(v.dob) : null,
+      address: v.address,
+      ancestry,
+      purpose: v.purpose,
+      signature: v.signature,
     },
+    select: { id: true },
   });
+
   return app.id;
 }

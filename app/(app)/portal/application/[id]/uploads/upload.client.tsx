@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// app/(app)/portal/application[s]/[id]/uploads/upload.client.tsx
 "use client";
 
 import { useState } from "react";
@@ -23,9 +24,9 @@ export function UploadButton({
     try {
       await upload(file.name, file, {
         access: "public",
-        addRandomSuffix: true,
-        handleUploadUrl: "/api/uploads",
+        handleUploadUrl: "/api/uploads", // your server route
         clientPayload: JSON.stringify({ applicationId, kind }),
+        contentType: file.type, // optional but nice
       });
       router.refresh();
     } catch (e: any) {
@@ -44,7 +45,7 @@ export function UploadButton({
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) onPick(f);
-          e.currentTarget.value = ""; // allow re-selecting same file
+          e.currentTarget.value = "";
         }}
         disabled={busy}
       />

@@ -17,11 +17,20 @@ function fmtDate(d: Date) {
     timeStyle: "short",
   }).format(d);
 }
-function fmtSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+// somewhere in your UI utils
+function fmtSize(bytes?: number | null) {
+  if (bytes == null) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let n = bytes;
+  let i = 0;
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  const precision = n < 10 && i > 0 ? 1 : 0;
+  return `${n.toFixed(precision)} ${units[i]}`;
 }
+
 function StatusBadge({ status }: { status: string }) {
   const s = status.toUpperCase();
   const map: Record<string, string> = {

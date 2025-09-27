@@ -2,6 +2,7 @@
 "use client";
 // import { useRouter } from "next/navigation";
 // import { useAuth } from "@clerk/nextjs";
+import type { UseFormRegister, FieldPath } from "react-hook-form";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -34,18 +35,15 @@ const schema = z.object({
 
   // Step 3 — Consents
   agreeRules: z.literal(true, {
-    errorMap: () => ({
-      message: "You must confirm you read and agree to the rules.",
-    }),
+    message: "You must confirm you read and agree to the rules.",
   }),
   agree18Months: z.literal(true, {
-    errorMap: () => ({
-      message: "You must agree to begin work within 18 months.",
-    }),
+    message: "You must agree to begin work within 18 months.",
   }),
   acknowledgeReissue: z.literal(true, {
-    errorMap: () => ({ message: "You must acknowledge the re-issue policy." }),
+    message: "You must acknowledge the re-issue policy.",
   }),
+
   signature: z.string().min(2, "Type your name as signature"),
   signDate: z.string().optional(),
 });
@@ -579,8 +577,8 @@ function ConsentItem({
   label,
   error,
 }: {
-  id: keyof ApplyFormData;
-  register: ReturnType<typeof useForm>["register"];
+  id: FieldPath<ApplyFormData>; // ✅ key of your form
+  register: UseFormRegister<ApplyFormData>; // ✅ register for your form
   label: React.ReactNode;
   error?: string;
 }) {
