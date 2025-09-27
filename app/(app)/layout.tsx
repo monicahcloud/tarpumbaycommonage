@@ -15,20 +15,22 @@ export default async function PortalLayout({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-900">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 md:grid-cols-[240px_1fr]">
+      <div className="mx-auto grid w-full max-w-8xl grid-cols-1 md:grid-cols-[240px_1fr]">
         {/* Sidebar */}
         <aside className="sticky top-0 h-[100dvh] border-r bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60">
           <div className="p-5">
-            <Link href="/portal" className="block">
+            <Link
+              href="/portal"
+              className="block justify-center items-center text-center">
               <h1 className="text-lg font-semibold tracking-tight">
                 Member Portal
               </h1>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-sm text-slate-500">
                 Tarpum Bay Commonage
               </p>
             </Link>
 
-            <nav className="mt-6 space-y-1 text-sm">
+            <nav className="mt-6 space-y-1 text-md">
               <NavItem
                 href="/portal"
                 icon={<LayoutDashboard className="h-4 w-4" />}>

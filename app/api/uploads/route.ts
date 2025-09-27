@@ -1,44 +1,44 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { NextResponse } from "next/server";
+// app/api/uploads/route.ts
+import { auth } from "@clerk/nextjs/server";
+import { handleUpload } from "@vercel/blob/client";
 import { prisma } from "@/lib/prisma";
+import { AttachmentKind } from "@prisma/client";
 
-export async function POST(request: Request) {
-  const body = (await request.json()) as HandleUploadBody;
+export const runtime = "nodejs";
 
-  const json = await handleUpload({
-    body,
-    request,
-    onBeforeGenerateToken: async (pathname, clientPayload) => {
-      // TODO: add auth/authorization check if needed
-      return {
-        allowedContentTypes: ["image/jpeg", "image/png", "application/pdf"],
-        addRandomSuffix: true,
-        tokenPayload: clientPayload ?? "",
-      };
-    },
-    onUploadCompleted: async ({ blob, tokenPayload }) => {
-      // Persist in DB
-      const payload = tokenPayload ? JSON.parse(tokenPayload) : {};
+export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) return new Response("Unauthorized", { status: 401 });
+
+  return handleUpload(req, {
+    onUploadCompleted: async ({ blob, clientPayload }) => {
+      const payload = clientPayload ? JSON.parse(clientPayload) : {};
       const { applicationId, kind } = payload as {
         applicationId: string;
-        kind: string;
+        kind: AttachmentKind;
       };
 
-      if (applicationId && kind) {
-        await prisma.attachment.create({
-          data: {
-            applicationId,
-            kind: kind as any,
-            url: blob.url,
-            contentType: blob.contentType,
-            size: blob.size,
-            label: blob.pathname, // or filename
-          },
-        });
-      }
-    },
-  });
+      const app = await prisma.application.findUnique({
+        where: { id: applicationId },
+        include: { user: true },
+      });
+      if (!app) throw new Error("Application not found");
 
-  return NextResponse.json(json);
+      const me = await prisma.user.findUnique({ where: { clerkId: userId } });
+      if (!me || app.userId !== me.id) throw new Error("Forbidden");
+
+      await prisma.attachment.create({
+        data: {
+          applicationId: app.id,
+          kind,
+          url: blob.url,
+          contentType: blob.contentType || "application/octet-stream",
+          size: blob.size,
+          label: blob.pathname.split("/").pop() || null,
+        },
+      });
+    },
+    // maximumSizeInBytes: 10 * 1024 * 1024,
+    // allowedContentTypes: ["image/*", "application/pdf"],
+  });
 }

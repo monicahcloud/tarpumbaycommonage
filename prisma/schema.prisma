@@ -42,7 +42,7 @@ model Application {
 
   // convenience
   attachments Attachment[]
-
+  @@unique([userId])
   @@index([userId])
 }
 

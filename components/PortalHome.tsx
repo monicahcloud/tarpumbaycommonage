@@ -40,8 +40,8 @@ export default async function PortalHome() {
       <div className="max-w-3xl">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="mt-2 text-slate-600">
-          We couldn’t find your member record yet. Try reloading this page or
-          signing out and back in.
+          We couldn&apos;t find your member record yet. Try reloading this page
+          or signing out and back in.
         </p>
       </div>
     );
@@ -104,7 +104,7 @@ export default async function PortalHome() {
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold">Recent applications</h2>
           <Link
-            href="/portal/applications"
+            href="/portal/application"
             className="text-sm text-blue-700 hover:underline">
             View all
           </Link>
@@ -143,12 +143,12 @@ export default async function PortalHome() {
                       <div className="flex flex-wrap gap-2">
                         <Link
                           className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
-                          href={`/portal/applications/${a.id}`}>
+                          href={`/portal/application/${a.id}`}>
                           View
                         </Link>
                         <Link
                           className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
-                          href={`/portal/applications/${a.id}/uploads`}>
+                          href={`/portal/application/${a.id}/uploads`}>
                           Uploads
                         </Link>
                         <a

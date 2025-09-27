@@ -171,7 +171,7 @@ export default function ApplyFormClient() {
   // ------------- Success -------------
   if (applicationId) {
     return (
-      <div className="mx-auto grid max-w-5xl gap-6 p-6 md:grid-cols-[3fr_2fr]">
+      <div className="mx-auto grid max-w-6xl gap-6 p-6 md:grid-cols-[3fr_2fr]">
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h1 className="text-2xl font-semibold">Application Submitted</h1>
           <p className="mt-2 text-muted-foreground">
