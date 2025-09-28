@@ -43,7 +43,7 @@ export default function Navigation() {
               </SignInButton>
 
               <Button asChild className="btn-hero" size="sm">
-                <Link href="/portal/apply">Apply Now</Link>
+                <Link href="/portal">Apply Now</Link>
               </Button>
             </SignedOut>
 
@@ -85,7 +85,7 @@ export default function Navigation() {
                   className="btn-hero w-full"
                   size="sm"
                   onClick={closeMenu}>
-                  <Link href="/portal/apply">Apply Now</Link>
+                  <Link href="/portal">Apply Now</Link>
                 </Button>
               </SignedOut>
 
