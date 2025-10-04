@@ -1,9 +1,7 @@
-import React from 'react'
+// app/documents/page.tsx
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+import DocumentsLibrary from "@/components/DocumentLibrary";
+
+export default function DocumentsPage() {
+  return <DocumentsLibrary api="/api/documents" />;
 }
-
-export default page
