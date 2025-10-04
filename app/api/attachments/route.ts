@@ -10,9 +10,11 @@ export const runtime = "nodejs";
 
 const Body = z.object({
   applicationId: z.string().min(1, "applicationId required"),
-  kind: z.nativeEnum(AttachmentKind, {
-    errorMap: () => ({ message: "Invalid attachment kind" }),
-  }),
+  kind: z
+    .nativeEnum(AttachmentKind)
+    .refine((val) => Object.values(AttachmentKind).includes(val), {
+      message: "Invalid attachment kind",
+    }),
   url: z.string().url("url must be a valid URL"),
   contentType: z.string().min(1).default("application/octet-stream"),
   size: z.number().int().nonnegative().optional(),
