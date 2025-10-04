@@ -109,10 +109,10 @@ export default function Footer() {
                   tbaycommonagecontact@gmail.com
                 </a>
               </div>
-              <div className="flex items-center space-x-2">
+              {/* <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4" aria-hidden="true" />
                 <span>+1 (242) 555-0123</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

@@ -615,7 +615,7 @@ function AsidePanel() {
             Lot Processing Fee: <strong>$100 (non-refundable)</strong>
           </li>
           <li>
-            Residential Lot Fee: <strong>$1,500</strong>
+            Residential Lot Fee: <strong>TBD</strong>
           </li>
           <li>
             Commercial Lot Fee: <strong>To be advised based on lot size</strong>

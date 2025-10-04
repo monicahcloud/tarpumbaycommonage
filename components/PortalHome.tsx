@@ -48,7 +48,7 @@ export default async function PortalHome() {
   }
 
   // Counts for stat cards
-  const [total, submitted, reviewing, approved, rejected] = await Promise.all([
+  const [submitted, reviewing, approved, rejected] = await Promise.all([
     prisma.application.count({ where: { userId: user.id } }),
     prisma.application.count({
       where: { userId: user.id, status: "SUBMITTED" },
@@ -83,16 +83,16 @@ export default async function PortalHome() {
             Start a new application or continue where you left off.
           </p>
         </div>
-        <Link
+        {/* <Link
           href="/portal/apply"
           className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90">
           New Application
-        </Link>
+        </Link> */}
       </div>
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Total" value={total} />
+        {/* <StatCard label="Total" value={total} /> */}
         <StatCard label="Submitted" value={submitted} />
         <StatCard label="Under review" value={reviewing} />
         <StatCard label="Approved" value={approved} />
@@ -102,7 +102,7 @@ export default async function PortalHome() {
       {/* Recent applications */}
       <section className="rounded-xl border bg-white/70 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold">Recent applications</h2>
+          <h2 className="text-base font-semibold">Recent application</h2>
           <Link
             href="/portal/application"
             className="text-sm text-blue-700 hover:underline">

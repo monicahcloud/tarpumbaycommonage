@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ensureUser } from "@/lib/ensureUser";
 import Link from "next/link";
-import { FilePlus2, FolderOpenDot, LayoutDashboard, User } from "lucide-react";
+import { FolderOpenDot, LayoutDashboard } from "lucide-react";
 
 export default async function PortalLayout({
   children,
@@ -36,21 +36,21 @@ export default async function PortalLayout({
                 icon={<LayoutDashboard className="h-4 w-4" />}>
                 Dashboard
               </NavItem>
-              <NavItem
+              {/* <NavItem
                 href="/portal/apply"
                 icon={<FilePlus2 className="h-4 w-4" />}>
                 Apply
-              </NavItem>
+              </NavItem> */}
               <NavItem
                 href="/portal/application"
                 icon={<FolderOpenDot className="h-4 w-4" />}>
                 My Applications
               </NavItem>
-              <NavItem
+              {/* <NavItem
                 href="/portal/profile"
                 icon={<User className="h-4 w-4" />}>
                 Profile
-              </NavItem>
+              </NavItem> */}
             </nav>
           </div>
         </aside>

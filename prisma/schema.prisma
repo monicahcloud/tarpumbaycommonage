@@ -55,11 +55,14 @@ model Attachment {
   url           String
   contentType   String
   size          Int?
+  pathname      String?
   createdAt     DateTime @default(now())
 
   // Optional descriptive name
   label         String?
 }
+
+
 
 enum AppStatus {
   DRAFT

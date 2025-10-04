@@ -1,57 +1,52 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/api/uploads/route.ts
+import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+// ⬇️ v2: import from /client and use the body+request signature
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { head } from "@vercel/blob"; // 👈 get metadata here
-import { prisma } from "@/lib/prisma";
-import { AttachmentKind } from "@prisma/client";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
+  // (keep auth if you want uploads gated)
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const body = (await req.json()) as HandleUploadBody;
+  // v2: read JSON body and pass it + request to handleUpload
+  const body = (await request.json()) as HandleUploadBody;
 
-  const json = await handleUpload({
-    request: req,
-    body,
-    onBeforeGenerateToken: async (_pathname, clientPayload) => ({
-      addRandomSuffix: true,
-      tokenPayload: clientPayload ?? undefined,
-    }),
-    onUploadCompleted: async ({ blob, tokenPayload }) => {
-      const payload = tokenPayload ? JSON.parse(tokenPayload) : {};
-      const { applicationId, kind } = payload as {
-        applicationId: string;
-        kind: AttachmentKind;
-      };
+  try {
+    const json = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (
+        pathname /* string */,
+        clientPayload /* string | undefined */
+      ) => {
+        // You can validate clientPayload here if you want
+        return {
+          maximumSizeInBytes: 10 * 1024 * 1024,
+          allowedContentTypes: [
+            "application/pdf",
+            "image/*",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          ],
+          // tokenPayload: JSON.stringify({ userId }) // optional, if you later use onUploadCompleted
+        };
+      },
+      // We are NOT using onUploadCompleted here (local dev is tricky for callbacks).
+      // You already persist to DB from the client via /api/attachments, which is perfect.
+    });
 
-      // Verify ownership
-      const app = await prisma.application.findUnique({
-        where: { id: applicationId },
-        include: { user: true },
-      });
-      const me = await prisma.user.findUnique({ where: { clerkId: userId } });
-      if (!app || !me || app.userId !== me.id) throw new Error("Forbidden");
-
-      // 👇 Fetch metadata (has size, contentType, pathname, etc.)
-      const meta = await head(blob.url);
-
-      await prisma.attachment.create({
-        data: {
-          applicationId: app.id,
-          kind,
-          url: meta.url, // (blob.url is fine too)
-          contentType: meta.contentType ?? "application/octet-stream",
-          size: typeof meta.size === "number" ? meta.size : null, // your schema allows Int?
-          label:
-            (meta.pathname || new URL(meta.url).pathname).split("/").pop() ??
-            null,
-        },
-      });
-    },
-  });
-
-  return Response.json(json);
+    // v2: return the json result
+    return NextResponse.json(json);
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err?.message ?? "Token generation failed" },
+      { status: 400 }
+    );
+  }
 }
