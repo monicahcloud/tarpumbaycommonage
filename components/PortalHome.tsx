@@ -80,7 +80,7 @@ export default async function PortalHome() {
             Welcome{user.firstName ? `, ${user.firstName}` : ""}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Start a new application or continue where you left off.
+            Start a new application or view your status.
           </p>
         </div>
         {/* <Link
@@ -128,7 +128,7 @@ export default async function PortalHome() {
                 {apps.map((a) => (
                   <tr key={a.id} className="align-middle">
                     <td className="px-3 py-3 font-mono text-xs text-slate-600">
-                      {a.id.slice(0, 8)}
+                      {a.id.slice(0, 30)}
                     </td>
                     <td className="px-3 py-3">
                       <div className="line-clamp-2">{a.purpose || "—"}</div>
@@ -141,11 +141,11 @@ export default async function PortalHome() {
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap gap-2">
-                        <Link
+                        {/* <Link
                           className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
                           href={`/portal/application/${a.id}`}>
                           View
-                        </Link>
+                        </Link> */}
                         <Link
                           className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
                           href={`/portal/application/${a.id}/uploads`}>

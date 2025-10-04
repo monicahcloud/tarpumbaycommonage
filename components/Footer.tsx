@@ -8,7 +8,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t bg-muted/50">
-      <div className="container px-4 py-12 md:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Logo + About */}
           <div className="space-y-3">
@@ -133,6 +133,17 @@ export default function Footer() {
               className="transition-colors hover:text-foreground">
               Terms of Service
             </Link>
+          </p>
+          <p className="mt-1">
+            Website designed and developed by{" "}
+            <a
+              href="https://vitanovadesigns.cloud"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-medium text-gray-800 hover:text-black">
+              Vitanova Designs
+            </a>
+            .
           </p>
         </div>
       </div>
