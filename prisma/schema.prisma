@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,61 +10,86 @@ datasource db {
 }
 
 model User {
-  id         String         @id @default(cuid())
-  clerkId    String         @unique
-  email      String         @unique
-  firstName  String?
-  lastName   String?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id            String         @id @default(cuid())
+  clerkId       String         @unique
+  email         String         @unique
+  firstName     String?
+  lastName      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  applications Application[]
+  applications  Application[]
 }
 
 model Application {
-  id         String     @id @default(cuid())
-  userId     String
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // v1 fields
-  firstName  String
-  lastName   String
-  email      String
-  phone      String?
-  dob        DateTime?
-  address    String?
-  ancestry   String?
-  purpose    String
-  signature  String?        // or future: signatureImageUrl (Blob)
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  dob            DateTime?
+  address        String?
+  ancestry       String?
+  purpose        String
+  signature      String?
 
-  status     AppStatus  @default(DRAFT)
-  submittedAt DateTime?
-  updatedAt  DateTime   @updatedAt
-  createdAt  DateTime   @default(now())
+  // admin fields (added)
+  status         AppStatus   @default(DRAFT)
+  lotNumber      String?
+  rejectionReason String?
+  nextSteps      String?
+  adminNote      String?
 
-  // convenience
-  attachments Attachment[]
+  // fees
+  feeAmount      Int?        // store cents; format in UI
+  feesPaid       Boolean     @default(false)
+  feePaidAt      DateTime?
+
+  submittedAt    DateTime?
+  updatedAt      DateTime    @updatedAt
+  createdAt      DateTime    @default(now())
+
+  // relations
+  attachments    Attachment[]
+  statusLogs     StatusLog[]
+
   @@unique([userId])
   @@index([userId])
+  @@index([status, createdAt])
 }
 
 model Attachment {
-  id            String   @id @default(cuid())
+  id            String        @id @default(cuid())
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   kind          AttachmentKind
   url           String
   contentType   String
   size          Int?
   pathname      String?
-  createdAt     DateTime @default(now())
-
-  // Optional descriptive name
   label         String?
+
+  createdAt     DateTime      @default(now())
 }
 
+model StatusLog {
+  id            String       @id @default(cuid())
+  applicationId String
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
+  changedBy     String       // admin user id or email
+  fromStatus    AppStatus
+  toStatus      AppStatus
+  note          String?
+  createdAt     DateTime     @default(now())
+
+  @@index([applicationId, createdAt])
+}
 
 enum AppStatus {
   DRAFT
@@ -78,4 +105,81 @@ enum AttachmentKind {
   DRAWINGS
   PROOF_OF_ADDRESS
   OTHER
+}
+
+// prisma/schema.prisma — add below your existing models
+
+model News {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String?
+  contentMd   String   // store Markdown (simple + portable)
+  status      PublishStatus @default(DRAFT)
+  publishAt   DateTime?     // optional scheduled time
+  createdBy   String
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  contentMd   String
+  status      PublishStatus @default(DRAFT)
+  publishAt   DateTime?
+  createdBy   String
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Faq {
+  id          String   @id @default(cuid())
+  question    String
+  answerMd    String
+  category    String?   // optional: "admissions", "fees", etc.
+  orderIndex  Int       @default(0)
+  status      PublishStatus @default(DRAFT)
+  createdBy   String
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, orderIndex])
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+// prisma/schema.prisma — add this
+
+model Event {
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  descriptionMd String?
+  status       PublishStatus  @default(DRAFT)
+
+  // timing
+  startsAt     DateTime
+  endsAt       DateTime
+  allDay       Boolean        @default(false)
+
+  // where
+  location     String?        // e.g., "WHS Library"
+  isVirtual    Boolean        @default(false)
+  zoomJoinUrl  String?        // "https://zoom.us/j/..."
+  zoomPasscode String?
+
+  // meta
+  createdBy    String
+  updatedBy    String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([status, startsAt])
 }

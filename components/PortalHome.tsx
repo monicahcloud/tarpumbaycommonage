@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { ArrowRight, FileUp, FileText } from "lucide-react";
 
 // ————— helpers —————
 function fmtDate(d: Date) {
@@ -10,7 +11,7 @@ function fmtDate(d: Date) {
   }).format(d);
 }
 
-function StatusBadge({ status }: { status: string }) {
+function pillClass(status: string) {
   const s = status.toUpperCase();
   const map: Record<string, string> = {
     DRAFT: "bg-slate-100 text-slate-700 ring-slate-200",
@@ -19,11 +20,16 @@ function StatusBadge({ status }: { status: string }) {
     APPROVED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
     REJECTED: "bg-rose-50 text-rose-700 ring-rose-200",
   };
-  const cls = map[s] ?? "bg-slate-100 text-slate-700 ring-slate-200";
+  return map[s] ?? map["DRAFT"];
+}
 
+function StatusBadge({ status }: { status: string }) {
+  const s = status.toUpperCase();
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ${cls}`}>
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${pillClass(
+        s
+      )}`}>
       {s.replace("_", " ")}
     </span>
   );
@@ -35,21 +41,21 @@ export default async function PortalHome() {
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } });
   if (!user) {
-    // If ensureUser somehow didn’t run, keep this page safe
     return (
-      <div className="max-w-3xl">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="mt-2 text-slate-600">
-          We couldn&apos;t find your member record yet. Try reloading this page
-          or signing out and back in.
-        </p>
+      <div className="mx-auto w-full max-w-6xl p-6">
+        <div className="rounded-2xl border bg-white/70 p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="mt-2 text-slate-600">
+            We couldn&apos;t find your member record yet. Try reloading this
+            page or signing out and back in.
+          </p>
+        </div>
       </div>
     );
   }
 
   // Counts for stat cards
-  const [submitted, reviewing, approved, rejected] = await Promise.all([
-    prisma.application.count({ where: { userId: user.id } }),
+  const [submitted, underReview, approved, rejected] = await Promise.all([
     prisma.application.count({
       where: { userId: user.id, status: "SUBMITTED" },
     }),
@@ -72,120 +78,218 @@ export default async function PortalHome() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome{user.firstName ? `, ${user.firstName}` : ""}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Start a new application or view your status.
-          </p>
-        </div>
-        {/* <Link
-          href="/portal/apply"
-          className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90">
-          New Application
-        </Link> */}
-      </div>
-
-      {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {/* <StatCard label="Total" value={total} /> */}
-        <StatCard label="Submitted" value={submitted} />
-        <StatCard label="Under review" value={reviewing} />
-        <StatCard label="Approved" value={approved} />
-        <StatCard label="Rejected" value={rejected} />
-      </div>
-
-      {/* Recent applications */}
-      <section className="rounded-xl border bg-white/70 p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold">Recent application</h2>
-          <Link
-            href="/portal/application"
-            className="text-sm text-blue-700 hover:underline">
-            View all
-          </Link>
-        </div>
-
-        {apps.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="text-xs text-slate-500">
-                <tr>
-                  <th className="px-3 py-2 font-medium">ID</th>
-                  <th className="px-3 py-2 font-medium">Purpose</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Created</th>
-                  <th className="px-3 py-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {apps.map((a) => (
-                  <tr key={a.id} className="align-middle">
-                    <td className="px-3 py-3 font-mono text-xs text-slate-600">
-                      {a.id.slice(0, 30)}
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="line-clamp-2">{a.purpose || "—"}</div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <StatusBadge status={a.status} />
-                    </td>
-                    <td className="px-3 py-3 text-slate-600">
-                      {fmtDate(a.createdAt)}
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        {/* <Link
-                          className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
-                          href={`/portal/application/${a.id}`}>
-                          View
-                        </Link> */}
-                        <Link
-                          className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
-                          href={`/portal/application/${a.id}/uploads`}>
-                          Uploads
-                        </Link>
-                        <a
-                          className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
-                          href={`/api/applications/${a.id}/pdf`}>
-                          PDF
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(79,70,229,0.08),rgba(6,182,212,0.08)_40%,transparent_60%)]" />
+        <div className="mx-auto w-full max-w-6xl px-6 pt-10 pb-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+                Welcome{user.firstName ? `, ${user.firstName}` : ""}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                Start a new application, track status, and manage your
+                documents.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link
+                href="/portal/apply"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700">
+                New Application <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/portal/application"
+                className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
+                View Application <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-        )}
+        </div>
       </section>
+
+      <main className="mx-auto w-full max-w-6xl px-6 pb-16 space-y-8">
+        {/* Stat cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Submitted"
+            value={submitted}
+            gradient="from-blue-100 to-blue-50"
+          />
+          <StatCard
+            label="Under review"
+            value={underReview}
+            gradient="from-amber-100 to-amber-50"
+          />
+          <StatCard
+            label="Approved"
+            value={approved}
+            gradient="from-emerald-100 to-emerald-50"
+          />
+          <StatCard
+            label="Rejected"
+            value={rejected}
+            gradient="from-rose-100 to-rose-50"
+          />
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <QuickAction
+            title="Upload Documents"
+            description="Add ID, proof of address, or drawings"
+            href="/portal/application"
+            icon={<FileUp className="h-5 w-5" />}
+          />
+          <QuickAction
+            title="Download Latest PDF"
+            description="Get a stamped copy of your application"
+            href={
+              apps[0]
+                ? `/api/applications/${apps[0].id}/pdf`
+                : "/portal/application"
+            }
+            icon={<FileText className="h-5 w-5" />}
+          />
+          <QuickAction
+            title="Continue Where You Left Off"
+            description="Jump back into your most recent draft"
+            href={
+              apps[0] ? `/portal/application/${apps[0].id}` : "/portal/apply"
+            }
+            icon={<ArrowRight className="h-5 w-5" />}
+          />
+        </div>
+
+        {/* Recent application */}
+        <section className="rounded-2xl border bg-white/70 p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">Recent application</h2>
+            <Link
+              href="/portal/application"
+              className="text-sm text-blue-700 hover:underline">
+              View
+            </Link>
+          </div>
+
+          {apps.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="text-xs text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">ID</th>
+                    <th className="px-3 py-2 font-medium">Purpose</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
+                    <th className="px-3 py-2 font-medium">Created</th>
+                    <th className="px-3 py-2 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {apps.map((a) => (
+                    <tr
+                      key={a.id}
+                      className="align-middle hover:bg-slate-50/60">
+                      <td className="px-3 py-3 font-mono text-xs text-slate-600">
+                        {a.id}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="line-clamp-2">{a.purpose || "—"}</div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusBadge status={a.status} />
+                      </td>
+                      <td className="px-3 py-3 text-slate-600">
+                        {fmtDate(a.createdAt)}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
+                            href={`/portal/application/${a.id}`}>
+                            View
+                          </Link>
+                          <Link
+                            className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
+                            href={`/portal/application/${a.id}/uploads`}>
+                            Uploads
+                          </Link>
+                          <a
+                            className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
+                            href={`/api/applications/${a.id}/pdf`}>
+                            PDF
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({
+  label,
+  value,
+  gradient,
+}: {
+  label: string;
+  value: number;
+  gradient: string;
+}) {
   return (
-    <div className="rounded-xl border bg-white/70 p-4 shadow-sm">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    <div
+      className={`rounded-2xl border bg-gradient-to-b ${gradient} p-4 shadow-sm`}>
+      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
+      <p className="mt-1 text-3xl font-semibold">{value}</p>
     </div>
+  );
+}
+
+function QuickAction({
+  title,
+  description,
+  href,
+  icon,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-2xl border bg-white/70 p-4 shadow-sm transition hover:shadow-md">
+      <div className="flex items-center gap-3">
+        <div className="rounded-xl bg-gradient-to-br from-cyan-500/15 to-purple-500/15 p-2 ring-1 ring-border">
+          {icon}
+        </div>
+        <div>
+          <div className="font-medium">{title}</div>
+          <div className="text-sm text-slate-600">{description}</div>
+        </div>
+        <ArrowRight className="ml-auto h-4 w-4 text-slate-400 transition group-hover:translate-x-0.5" />
+      </div>
+    </Link>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-slate-50/60 px-6 py-10 text-center">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-slate-50/60 px-6 py-10 text-center">
       <p className="text-sm text-slate-600">You have no applications yet.</p>
       <Link
         href="/portal/apply"
-        className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-        Start a new application
+        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        Start a new application <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );
