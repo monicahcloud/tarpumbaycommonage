@@ -61,7 +61,8 @@ const FAQS: FAQ[] = [
     a: (
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          Government-issued photo ID (passport, NIB card, or driver’s license)
+          Government-issued photo ID (passport, NIB card, or driver&apos;s
+          license)
         </li>
         <li>
           Proof of lineage (birth certificates, family tree, affidavit, or other
@@ -121,8 +122,8 @@ const FAQS: FAQ[] = [
           className="underline">
           tbaycommonagecontact@gmail.com
         </Link>
-        . Updates will also be posted on the Committee’s website and shared via
-        email announcements.
+        . Updates will also be posted on the Committee&apos;s website and shared
+        via email announcements.
       </p>
     ),
   },
@@ -205,7 +206,7 @@ export default function FAQPage() {
           </div>
           <p className="mt-3 text-gray-600 max-w-2xl">
             Answers about eligibility, applications, timelines, and lot
-            allocation. Can&pos;t find it?{" "}
+            allocation. Can&apos;t find it?{" "}
             <Link
               href="mailto:tbaycommonagecontact@gmail.com"
               className="underline underline-offset-2 decoration-indigo-500">

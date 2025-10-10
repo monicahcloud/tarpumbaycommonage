@@ -183,3 +183,35 @@ model Event {
 
   @@index([status, startsAt])
 }
+
+// prisma/schema.prisma
+enum DocCategory {
+  BYLAWS
+  POLICY
+  FORM
+  MEETING_MINUTES
+  GUIDE
+  OTHER
+}
+
+enum DocStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Document {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  description String?
+  category    DocCategory
+  tags        String[]    @default([])
+  fileUrl     String
+  contentType String?
+  size        Int?
+  pinned      Boolean     @default(false)
+  status      DocStatus   @default(PUBLISHED)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}

@@ -95,8 +95,23 @@ export default async function PortalHome() {
             </div>
             <div className="flex gap-2">
               <Link
+                href="/portal/application/${apps.id}/uploads"
+                className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
+                Upload Documents
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href={
+                  apps[0]
+                    ? `/api/applications/${apps[0].id}/pdf`
+                    : "/portal/application"
+                }
+                className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
+                Download PDF <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
                 href="/portal/apply"
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700">
+                className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
                 New Application <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
@@ -135,7 +150,7 @@ export default async function PortalHome() {
         </div>
 
         {/* Quick actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/*  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <QuickAction
             title="Upload Documents"
             description="Add ID, proof of address, or drawings"
@@ -159,9 +174,52 @@ export default async function PortalHome() {
               apps[0] ? `/portal/application/${apps[0].id}` : "/portal/apply"
             }
             icon={<ArrowRight className="h-5 w-5" />}
-          />
-        </div>
+          /> 
+        </div>*/}
+        <div className="grid grid-cols-2 gap-4 space-y-4">
+          <div className="rounded-2xl border bg-white/80 p-5 shadow-sm">
+            <h3 className="text-base font-semibold">Fees</h3>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+              <li>
+                Registration Fee: <strong>$25 (non-refundable)</strong>
+              </li>
+              <li>
+                Lot Processing Fee: <strong>$100 (non-refundable)</strong>
+              </li>
+              <li>
+                Residential Lot Fee: <strong>TBD</strong>
+              </li>
+              <li>
+                Commercial Lot Fee:{" "}
+                <strong>To be advised based on lot size</strong>
+              </li>
+            </ul>
+            <p className="mt-3 text-xs text-slate-600">
+              Payments: Tarpum Bay Commonage No. 10419388,
+              <br />
+              Acct # 1350006680 — Bank of the Bahamas, Rock Sound (Branch #
+              03153).
+            </p>
+          </div>
 
+          <div className="rounded-2xl border bg-white/80 p-5 shadow-sm">
+            <h3 className="text-base font-semibold">Required Documentation</h3>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+              <li>
+                <strong>Registration only:</strong> fee receipt, passport copy,
+                birth certificate copy
+              </li>
+              <li>
+                <strong>Residential lot:</strong> processing + residential fees,
+                preliminary building drawings
+              </li>
+              <li>
+                <strong>Commercial lot:</strong> business plan, preliminary
+                building drawings
+              </li>
+            </ul>
+          </div>
+        </div>
         {/* Recent application */}
         <section className="rounded-2xl border bg-white/70 p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
