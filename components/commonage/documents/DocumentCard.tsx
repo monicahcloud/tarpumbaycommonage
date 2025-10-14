@@ -2,13 +2,13 @@
 import { motion } from "framer-motion";
 import { fadeUp } from "@/components/commonage/motion";
 import type { DocumentItem } from "@/data/documents";
-import { ArrowDownToLine, ExternalLink } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { DocTypeIcon } from "./ DocumentIcons";
+import { DocTypeIcon } from "./DocumentIcons";
 
 export function DocumentCard({ doc }: { doc: DocumentItem }) {
   const isExternal = doc.type === "link" || doc.url.startsWith("http");
-  const actionLabel = isExternal ? "Open" : "Download / View";
+  const actionLabel = isExternal ? "Open" : "Open Document";
 
   return (
     <motion.div
@@ -25,11 +25,13 @@ export function DocumentCard({ doc }: { doc: DocumentItem }) {
               {doc.title}
             </Link>
           </h3>
-          {doc.description ? (
+
+          {doc.description && (
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
               {doc.description}
             </p>
-          ) : null}
+          )}
+
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
             <span className="rounded-full bg-gray-100 px-2 py-0.5">
               {doc.category}
@@ -41,18 +43,16 @@ export function DocumentCard({ doc }: { doc: DocumentItem }) {
               </span>
             ))}
           </div>
+
+          {/* 🧭 Always open in a new tab */}
           <div className="mt-4">
             <a
               href={doc.url}
-              target={isExternal ? "_blank" : undefined}
-              rel={isExternal ? "noopener noreferrer" : undefined}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium hover:bg-gray-50">
               {actionLabel}
-              {isExternal ? (
-                <ExternalLink className="h-4 w-4" />
-              ) : (
-                <ArrowDownToLine className="h-4 w-4" />
-              )}
+              <ArrowUpRight className="h-4 w-4" />
             </a>
           </div>
         </div>
