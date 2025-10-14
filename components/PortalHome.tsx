@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowRight, FileUp, FileText } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 // ————— helpers —————
 function fmtDate(d: Date) {

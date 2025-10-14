@@ -1,10 +1,11 @@
-// app/portal/layout.tsx — Beautiful, safe, and fixed (no undefined `app`)
-import { auth } from "@clerk/nextjs/server";
+// app/portal/layout.tsx
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { ensureUser } from "@/lib/ensureUser";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { LayoutDashboard, FolderOpenDot, UploadCloud } from "lucide-react";
-import MobileNav from "@/components/MobileNav"; // client component (see below)
+import MobileNav from "@/components/MobileNav";
+import Image from "next/image";
 
 export default async function PortalLayout({
   children,
@@ -15,8 +16,7 @@ export default async function PortalLayout({
   if (!userId) return redirectToSignIn({ returnBackUrl: "/portal" });
 
   await ensureUser();
-
-  // 🔧 Fix: fetch the user's latest application (ID only) for sidebar link
+  const user = await currentUser(); // 👈 get user data
   const latestApp = await prisma.application.findFirst({
     where: { user: { clerkId: userId } },
     orderBy: { createdAt: "desc" },
@@ -25,14 +25,14 @@ export default async function PortalLayout({
 
   const uploadsHref = latestApp
     ? `/portal/application/${latestApp.id}/uploads`
-    : "/portal/application"; // graceful fallback if no app yet
+    : "/portal/application";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-900">
       {/* Mobile header */}
       <div className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur md:hidden">
         <div className="mx-auto flex h-14 w-full max-w-8xl items-center justify-between px-4">
-          <Link href="/portal" className="text-sm font-semibold">
+          <Link href="/portal" className="text-xl font-semibold">
             Member Portal
           </Link>
           <MobileNav uploadsHref={uploadsHref} />
@@ -44,30 +44,50 @@ export default async function PortalLayout({
         <aside className="sticky top-0 hidden h-[100dvh] border-r bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 md:block">
           <div className="p-5">
             <Link href="/portal" className="block text-center">
-              <h1 className="text-lg font-semibold tracking-tight">
+              <h1 className="text-3xl font-semibold tracking-tight">
                 Member Portal
               </h1>
-              <p className="mt-0.5 text-sm text-slate-500">
+              <p className="mt-0.5 text-md text-slate-500">
                 Tarpum Bay Commonage
               </p>
             </Link>
 
             <nav className="mt-6 space-y-1 text-sm">
-              <NavItem
-                href="/portal"
-                icon={<LayoutDashboard className="h-4 w-4" />}>
-                Dashboard
-              </NavItem>
-              <NavItem
-                href="/portal/application"
-                icon={<FolderOpenDot className="h-4 w-4" />}>
-                My Application
-              </NavItem>
-              <NavItem
-                href={uploadsHref}
-                icon={<UploadCloud className="h-4 w-4" />}>
-                Manage Uploads
-              </NavItem>
+              {/* BIG AVATAR */}
+              <div className="mx-auto flex flex-col items-center gap-2 py-4">
+                <div className="h-24 w-24 overflow-hidden rounded-full ring-2 ring-primary/20 shadow-md">
+                  {/* Use next/image if you prefer */}
+                  <Image
+                    src={user?.imageUrl ?? "/avatar-fallback.png"}
+                    alt={user?.fullName ?? "User avatar"}
+                    className="h-full w-full object-cover"
+                    width={96}
+                    height={96}
+                  />
+                </div>
+                {user?.fullName ? (
+                  <div className="text-lg font-medium text-slate-700">
+                    {user.fullName}
+                  </div>
+                ) : null}
+              </div>
+              <div className="text-lg">
+                <NavItem
+                  href="/portal"
+                  icon={<LayoutDashboard className="h-5 w-5" />}>
+                  Dashboard
+                </NavItem>
+                <NavItem
+                  href="/portal/application"
+                  icon={<FolderOpenDot className="h-5 w-5" />}>
+                  My Application
+                </NavItem>
+                <NavItem
+                  href={uploadsHref}
+                  icon={<UploadCloud className="h-5 w-5" />}>
+                  Manage Uploads
+                </NavItem>
+              </div>{" "}
             </nav>
           </div>
         </aside>
@@ -97,5 +117,3 @@ function NavItem({
     </Link>
   );
 }
-
-/* --------------------------------------------------------- */
