@@ -6,8 +6,8 @@ export const BOARD: Person[] = [
     id: "chair",
     name: "Jewel Edwards",
     role: "Chairperson",
-    email: "chair@tarpumbaycommonage.org",
-    photoUrl: "/team/jane.jpg",
+    email: "tbaycommonagecontact@gmail.com",
+    photoUrl: "/team/jewel.jpg",
     bio: "Provides leadership, oversight, and strategic guidance for all committee operations.",
   },
   {
