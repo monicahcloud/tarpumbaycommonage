@@ -95,7 +95,7 @@ export default async function PortalHome() {
             </div>
             <div className="flex gap-2">
               <Link
-                href="/portal/application/${apps.id}/uploads"
+                href="/portal/application"
                 className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
                 Upload Documents
                 <ArrowRight className="h-4 w-4" />
@@ -181,7 +181,7 @@ export default async function PortalHome() {
             <h3 className="text-base font-semibold">Fees</h3>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
               <li>
-                Registration Fee: <strong>$25 (non-refundable)</strong>
+                Annual Registration Fee: <strong>$25 (non-refundable)</strong>
               </li>
               <li>
                 Lot Processing Fee: <strong>$100 (non-refundable)</strong>

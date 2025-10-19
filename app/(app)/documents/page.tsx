@@ -12,7 +12,6 @@ import { DocumentGrid } from "@/components/commonage/documents/DocumentGrid";
 import { DOCUMENTS } from "@/data/documents";
 import {
   FileStack,
-  Sparkles,
   Filter as FilterIcon,
   ArrowDownWideNarrow,
 } from "lucide-react";

@@ -261,7 +261,7 @@ export default function ApplyFormClient() {
                   </Field>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                   <Field label="Date of Birth">
                     <input
                       type="date"
@@ -678,7 +678,7 @@ function AsidePanel() {
         <h3 className="text-base font-semibold">Fees</h3>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
           <li>
-            Registration Fee: <strong>$25 (non-refundable)</strong>
+            Annual Registration Fee: <strong>$25 (non-refundable)</strong>
           </li>
           <li>
             Lot Processing Fee: <strong>$100 (non-refundable)</strong>

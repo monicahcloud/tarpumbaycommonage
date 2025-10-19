@@ -77,6 +77,11 @@ const FAQS: FAQ[] = [
     a: "Only descendants of the original registered commoners of Tarpum Bay are eligible. Proof of lineage is required.",
   },
   {
+    q: "How do I apply for Commonage Land?",
+    category: "Eligibility",
+    a: "• Firstly, persons have to be registered Commoners and verified as Registered Commoners of Tarpum Bay. • Once vetted as a Commoner, persons may then make an application to be included in the lot pool to obtain lots. • When applying for a lot, persons should have official I.D., house/building plan, appropriate Commonage lot fee. Fees subject to change.",
+  },
+  {
     q: "I’m already registered as a commoner. Do I need to register again?",
     category: "Eligibility",
     a: "No. Once registered, you remain on record; however, you must complete the updated application form for any land request.",
@@ -102,9 +107,19 @@ const FAQS: FAQ[] = [
     a: "Official communication is sent via email; WhatsApp or phone may be used when needed.",
   },
   {
+    q: "How long before receiving my lot?",
+    category: "Timelines",
+    a: "There is a backlog with persons applying for lots and the Committee are taking great care to ensure all applying are verified as Commoners. The process of persons applying is made public in Commonage meeting with Commoners.",
+  },
+  {
+    q: "Where do the newcomers fall as it relates to the list?",
+    category: "General",
+    a: "Committee is reviewing and verifying all those applying in a systematic methodical first come, first serve basis. We encourage all persons to apply to be registered and verified as a Commoner of Tarpum Bay first. The Committee WILL NOT compromise on the Rules and the requirements of those applying for Commonage Land.",
+  },
+  {
     q: "Is there a fee to apply?",
     category: "Fees",
-    a: "There is no fee to submit an application at this time. Administrative fees may apply after allocation.",
+    a: "There is an annual fee of $25.",
   },
   {
     q: "What are my responsibilities if land is granted?",
