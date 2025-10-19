@@ -40,7 +40,7 @@ export default function Footer() {
                   About Us
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   href="/docs"
                   className="transition-colors hover:text-foreground text-muted-foreground">
@@ -53,7 +53,7 @@ export default function Footer() {
                   className="transition-colors hover:text-foreground text-muted-foreground">
                   News &amp; Announcements
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link
                   href="/faq"
@@ -82,14 +82,14 @@ export default function Footer() {
                   Member Portal
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <span className="text-muted-foreground">
                   Community Meetings
                 </span>
-              </li>
-              <li>
+              </li> */}
+              {/* <li>
                 <span className="text-muted-foreground">Document Services</span>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -141,7 +141,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="underline font-medium text-gray-800 hover:text-black">
-              Vitanova Designs
+              VitaVova Designs
             </a>
             .
           </p>
