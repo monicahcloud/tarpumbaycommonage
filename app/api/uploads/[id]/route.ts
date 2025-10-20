@@ -1,37 +1,43 @@
-// app/api/uploads/[id]/route.ts
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { del } from "@vercel/blob";
-
-export const runtime = "nodejs";
+import { del } from "@vercel/blob"; // replace if using another storage
 
 export async function DELETE(
   _req: Request,
-  ctx: { params: Promise<{ id: string }> } // 👈 params is a Promise in Next 15
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await ctx.params; // 👈 await it
-
+  const { id } = await params;
   const { userId } = await auth();
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
-  const att = await prisma.attachment.findUnique({
+  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!dbUser) return new Response("Not Found", { status: 404 });
+
+  const file = await prisma.attachment.findUnique({
     where: { id },
-    include: { application: true },
+    select: {
+      id: true,
+      pathname: true,
+      // ownership via either commoner or application
+      commoner: { select: { userId: true } },
+      application: { select: { userId: true } },
+    },
   });
-  if (!att) return new Response("Not found", { status: 404 });
+  if (!file) return new Response("Not Found", { status: 404 });
 
-  const me = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!me || att.application.userId !== me.id) {
+  const ownerId = file.commoner?.userId ?? file.application?.userId ?? null;
+  if (!ownerId || ownerId !== dbUser.id)
     return new Response("Forbidden", { status: 403 });
+
+  // Delete from storage (best-effort)
+  if (file.pathname) {
+    try {
+      await del(file.pathname);
+    } catch {
+      // swallow; we still remove DB row
+    }
   }
 
-  // Delete the blob (ignore if already gone)
-  try {
-    await del(att.url);
-  } catch {
-    // ignore
-  }
-
-  await prisma.attachment.delete({ where: { id: att.id } });
+  await prisma.attachment.delete({ where: { id } });
   return new Response(null, { status: 204 });
 }

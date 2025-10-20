@@ -1,2 +1,1 @@
--- AlterTable
-ALTER TABLE "public"."Attachment" ALTER COLUMN "size" DROP NOT NULL;
+-- no-op: consolidated into 0000_baseline

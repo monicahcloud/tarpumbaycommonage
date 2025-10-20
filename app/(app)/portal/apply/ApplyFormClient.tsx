@@ -27,10 +27,8 @@ const schema = z.object({
   lastName: z.string().min(1, "Required"),
   dob: z.string().optional(), // YYYY-MM-DD
   email: z.string().email("Invalid email"),
-
   addressLine1: z.string().min(1, "Required"),
   addressLine2: z.string().optional(),
-
   phone: z.string().min(3, "Enter a phone"),
   phoneType: z.enum(["home", "cell", "work"]),
 
@@ -57,7 +55,6 @@ const schema = z.object({
   signature: z.string().min(2, "Type your name as signature"),
   signDate: z.string().optional(),
 });
-
 export type ApplyFormData = z.infer<typeof schema>;
 
 // -------------------- Component --------------------
@@ -142,8 +139,24 @@ export default function ApplyFormClient() {
     else setStep((s) => (s - 1) as typeof step);
   };
 
+  // ---- submit gating + Enter prevention ----
+  const onSubmitGate: React.FormEventHandler<HTMLFormElement> = (e) => {
+    if (step !== 4) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  const onKeyDown: React.KeyboardEventHandler<HTMLFormElement> = (e) => {
+    if (e.key === "Enter") {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag !== "TEXTAREA") e.preventDefault();
+    }
+  };
+
   // ------------- Submit -------------
   async function onSubmit(data: ApplyFormData) {
+    if (step !== 4) return; // extra guard
+
     const payload = {
       firstName: data.firstName,
       lastName: data.lastName,
@@ -230,7 +243,12 @@ export default function ApplyFormClient() {
           {/* Stepper */}
           <Stepper step={step} />
 
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
+          <form
+            onSubmitCapture={onSubmitGate}
+            onKeyDown={onKeyDown}
+            onSubmit={handleSubmit(onSubmit)}
+            className="mt-6 space-y-6">
+            {/* Step 1 */}
             {step === 1 && (
               <section className="space-y-4">
                 <SectionTitle
@@ -281,7 +299,6 @@ export default function ApplyFormClient() {
                   </Field>
                 </div>
 
-                {/* Mailing Address — two lines */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field
                     label="Mailing Address (Line 1)"
@@ -299,7 +316,6 @@ export default function ApplyFormClient() {
                   </Field>
                 </div>
 
-                {/* Phone with type selector */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label="Phone Number" error={errors.phone?.message}>
                     <div className="relative">
@@ -330,6 +346,7 @@ export default function ApplyFormClient() {
               </section>
             )}
 
+            {/* Step 2 */}
             {step === 2 && (
               <section className="space-y-4">
                 <SectionTitle
@@ -391,12 +408,37 @@ export default function ApplyFormClient() {
               </section>
             )}
 
+            {/* Step 3 */}
             {step === 3 && (
               <section className="space-y-4">
                 <SectionTitle
                   icon={<Check className="h-4 w-4" />}
                   title="Consent & Sign"
                 />
+
+                <div className="rounded-2xl border bg-white p-3 text-sm">
+                  <p className="mb-2">Please review before signing:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>
+                      <a
+                        className="underline"
+                        href="/documents/CommitteeRules.pdf"
+                        target="_blank"
+                        rel="noreferrer">
+                        Commonage Committee Rules (PDF)
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="underline"
+                        href="/documents/commonageAct.pdf"
+                        target="_blank"
+                        rel="noreferrer">
+                        Commonage Act (PDF)
+                      </a>
+                    </li>
+                  </ul>
+                </div>
 
                 <div className="space-y-2 rounded-2xl border bg-white p-3 text-sm">
                   <ConsentItem
@@ -460,6 +502,7 @@ export default function ApplyFormClient() {
               </section>
             )}
 
+            {/* Step 4 */}
             {step === 4 && (
               <section className="space-y-4">
                 <SectionTitle title="Preview" />

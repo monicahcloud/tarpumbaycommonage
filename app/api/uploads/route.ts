@@ -1,52 +1,97 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/api/uploads/route.ts
-import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-// ⬇️ v2: import from /client and use the body+request signature
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { prisma } from "@/lib/prisma";
 
-export const runtime = "edge";
+// ---- storage adapter (swap with your own) ----
+import { put, del } from "@vercel/blob"; // If not using Vercel Blob, replace these.
+import crypto from "node:crypto";
+
+async function uploadFile(file: File) {
+  // Generate a path; keep it flat & unique
+  const ext = file.name?.split(".").pop() ?? "";
+  const key = `${crypto.randomUUID()}${ext ? "." + ext : ""}`;
+
+  // Vercel Blob upload (public, change to private if needed)
+  const res = await put(key, Buffer.from(await file.arrayBuffer()), {
+    access: "public",
+    contentType: file.type || "application/octet-stream",
+  });
+
+  return {
+    url: res.url, // public URL
+    contentType: file.type || null,
+    size: file.size ?? null,
+    pathname: key, // to delete later
+  };
+}
+// --------------------------------------------
 
 export async function POST(request: Request) {
-  // (keep auth if you want uploads gated)
   const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) return new Response("Unauthorized", { status: 401 });
+
+  const ct = request.headers.get("content-type") || "";
+  if (!ct.includes("multipart/form-data")) {
+    return new Response("Expected multipart/form-data", { status: 415 });
   }
 
-  // v2: read JSON body and pass it + request to handleUpload
-  const body = (await request.json()) as HandleUploadBody;
+  const form = await request.formData();
+  const kind = String(form.get("kind") || "");
+  const commonerId = form.get("commonerId")?.toString() || null;
+  const applicationId = form.get("applicationId")?.toString() || null;
+  const file = form.get("file") as File | null;
 
-  try {
-    const json = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async (
-        pathname /* string */,
-        clientPayload /* string | undefined */
-      ) => {
-        // You can validate clientPayload here if you want
-        return {
-          maximumSizeInBytes: 10 * 1024 * 1024,
-          allowedContentTypes: [
-            "application/pdf",
-            "image/*",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          ],
-          // tokenPayload: JSON.stringify({ userId }) // optional, if you later use onUploadCompleted
-        };
-      },
-      // We are NOT using onUploadCompleted here (local dev is tricky for callbacks).
-      // You already persist to DB from the client via /api/attachments, which is perfect.
+  if (!kind) return new Response("Missing kind", { status: 400 });
+  if (!file) return new Response("Missing file", { status: 400 });
+  if (!commonerId && !applicationId) {
+    return new Response("Provide commonerId or applicationId", { status: 400 });
+  }
+
+  // Ownership checks
+  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!dbUser) return new Response("User not found", { status: 404 });
+
+  if (commonerId) {
+    const reg = await prisma.commonerRegistration.findUnique({
+      where: { id: commonerId },
+      select: { userId: true },
     });
-
-    // v2: return the json result
-    return NextResponse.json(json);
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message ?? "Token generation failed" },
-      { status: 400 }
-    );
+    if (!reg || reg.userId !== dbUser.id)
+      return new Response("Forbidden", { status: 403 });
   }
+
+  if (applicationId) {
+    const app = await prisma.application.findUnique({
+      where: { id: applicationId },
+      select: { userId: true },
+    });
+    if (!app || app.userId !== dbUser.id)
+      return new Response("Forbidden", { status: 403 });
+  }
+
+  // Upload the file
+  const uploaded = await uploadFile(file);
+
+  // Save unified Attachment
+  const created = await prisma.attachment.create({
+    data: {
+      commonerId: commonerId,
+      applicationId: applicationId,
+      kind: kind as any, // AttachmentKind
+      url: uploaded.url,
+      contentType: uploaded.contentType,
+      size: uploaded.size ?? undefined,
+      label: file.name || undefined,
+      pathname: uploaded.pathname,
+    },
+  });
+
+  return Response.json({
+    id: created.id,
+    url: created.url,
+    contentType: created.contentType,
+    size: created.size,
+    kind: created.kind,
+    createdAt: created.createdAt,
+  });
 }

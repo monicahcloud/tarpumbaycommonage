@@ -3,9 +3,64 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
+
+/* ---------- Enums ---------- */
+
+enum CommonerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AppStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum AttachmentKind {
+  // Commoner registration
+  ID_PASSPORT
+  BIRTH_CERT
+  PROOF_OF_LINEAGE
+  PROOF_OF_ADDRESS
+
+  // Lot application
+  DRAWINGS
+  BUSINESS_PLAN
+
+  // generic
+  OTHER
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DocCategory {
+  BYLAWS
+  POLICY
+  FORM
+  MEETING_MINUTES
+  GUIDE
+  OTHER
+}
+
+enum DocStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/* ---------- Core Models ---------- */
 
 model User {
   id           String       @id @default(cuid())
@@ -15,12 +70,54 @@ model User {
   lastName     String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+
   applications Application?
+  commoner     CommonerRegistration?
+}
+
+model CommonerRegistration {
+  id           String          @id @default(cuid())
+  userId       String          @unique
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status       CommonerStatus  @default(PENDING)
+  submittedAt  DateTime        @default(now())
+  approvedAt   DateTime?
+
+  firstName    String
+  lastName     String
+  email        String
+  phone        String?
+  dob          DateTime?
+  address      String
+  ancestry     String?
+
+  agreeRules   Boolean
+  signature    String
+  signDate     DateTime?
+
+  // If they already have property
+  hasExistingProperty   Boolean  @default(false)
+  existingLotNumber     String?
+  existingPropertyNotes String?
+
+  // Uploads unified here
+  attachments  Attachment[]     @relation("CommonerAttachments")
+
+  // Optional reverse link from Application(s)
+  applications Application[]
+
+  @@index([status, submittedAt])
 }
 
 model Application {
   id              String       @id @default(cuid())
   userId          String       @unique
+
+  // link back to the CommonerRegistration used to prefill/snapshot
+  commonerId      String?
+  commoner        CommonerRegistration? @relation(fields: [commonerId], references: [id], onDelete: SetNull)
+
   firstName       String
   lastName        String
   email           String
@@ -29,7 +126,14 @@ model Application {
   address         String?
   ancestry        String?
   purpose         String
+
   signature       String?
+  signDate        DateTime?
+  additionalInfo  String?
+
+  // durable flag for path (existing-lot vs new)
+  alreadyHasLand  Boolean      @default(false)
+
   status          AppStatus    @default(DRAFT)
   submittedAt     DateTime?
   updatedAt       DateTime     @updatedAt
@@ -41,26 +145,42 @@ model Application {
   lotNumber       String?
   nextSteps       String?
   rejectionReason String?
+
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attachments     Attachment[]
+  attachments     Attachment[] @relation("ApplicationAttachments")   // ✅ keep this one
   statusLogs      StatusLog[]
 
   @@index([userId])
   @@index([status, createdAt])
+  @@index([commonerId])
 }
 
+
 model Attachment {
-  id            String         @id @default(cuid())
-  applicationId String
+  id            String       @id @default(cuid())
+
+  // Either attached to a CommonerRegistration or to an Application
+  commonerId    String?
+  applicationId String?
+
   kind          AttachmentKind
   url           String
   contentType   String
   size          Int?
-  createdAt     DateTime       @default(now())
+  createdAt     DateTime     @default(now())
   label         String?
   pathname      String?
-  application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  // Relations with names to avoid ambiguity
+  commoner      CommonerRegistration? @relation("CommonerAttachments",   fields: [commonerId],    references: [id], onDelete: Cascade)
+  application   Application?          @relation("ApplicationAttachments", fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([commonerId, createdAt])
+  @@index([applicationId, createdAt])
 }
+
+
+/* ---------- Status log ---------- */
 
 model StatusLog {
   id            String      @id @default(cuid())
@@ -74,6 +194,8 @@ model StatusLog {
 
   @@index([applicationId, createdAt])
 }
+
+/* ---------- CMS-ish models you already had ---------- */
 
 model News {
   id        String        @id @default(cuid())
@@ -154,41 +276,4 @@ model Document {
 
   @@index([status, updatedAt])
   @@index([category])
-}
-
-enum AppStatus {
-  DRAFT
-  SUBMITTED
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
-}
-
-enum AttachmentKind {
-  ID_PASSPORT
-  BIRTH_CERT
-  DRAWINGS
-  PROOF_OF_ADDRESS
-  OTHER
-}
-
-enum PublishStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
-enum DocCategory {
-  BYLAWS
-  POLICY
-  FORM
-  MEETING_MINUTES
-  GUIDE
-  OTHER
-}
-
-enum DocStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
 }
