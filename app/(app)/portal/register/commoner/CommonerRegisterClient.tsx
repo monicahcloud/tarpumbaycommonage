@@ -118,20 +118,20 @@ export default function CommonerRegisterClient({
   };
 
   /* ---------- hard gate: never submit unless on step 4 ---------- */
-  const onSubmitGate: React.FormEventHandler<HTMLFormElement> = (e) => {
-    if (step !== 4) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  };
+  // const onSubmitGate: React.FormEventHandler<HTMLFormElement> = (e) => {
+  //   if (step !== 4) {
+  //     e.preventDefault();
+  //     e.stopPropagation();
+  //   }
+  // };
 
   /* ---------- block Enter key from accidentally submitting ---------- */
-  const onKeyDown: React.KeyboardEventHandler<HTMLFormElement> = (e) => {
-    if (e.key === "Enter") {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag !== "TEXTAREA") e.preventDefault();
-    }
-  };
+  // const onKeyDown: React.KeyboardEventHandler<HTMLFormElement> = (e) => {
+  //   if (e.key === "Enter") {
+  //     const tag = (e.target as HTMLElement).tagName;
+  //     if (tag !== "TEXTAREA") e.preventDefault();
+  //   }
+  // };
 
   /* -------------------- submit -------------------- */
   async function onSubmit(v: FormData) {

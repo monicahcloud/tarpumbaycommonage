@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// app/api/uploads/route.ts
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-
-// ---- storage adapter (swap with your own) ----
-import { put, del } from "@vercel/blob"; // If not using Vercel Blob, replace these.
+import { put /*, del */ } from "@vercel/blob";
 import crypto from "node:crypto";
 
+export const runtime = "nodejs"; // Buffer/crypto needed in Node runtime
+
+// ---- storage adapter (swap with your own) ----
 async function uploadFile(file: File) {
-  // Generate a path; keep it flat & unique
   const ext = file.name?.split(".").pop() ?? "";
   const key = `${crypto.randomUUID()}${ext ? "." + ext : ""}`;
 
-  // Vercel Blob upload (public, change to private if needed)
+  // Upload to Vercel Blob (public). If you use a token, add `token:` here.
   const res = await put(key, Buffer.from(await file.arrayBuffer()), {
     access: "public",
     contentType: file.type || "application/octet-stream",
@@ -19,9 +20,9 @@ async function uploadFile(file: File) {
 
   return {
     url: res.url, // public URL
-    contentType: file.type || null,
-    size: file.size ?? null,
-    pathname: key, // to delete later
+    contentType: file.type || "application/octet-stream", // <-- ALWAYS string
+    size: typeof file.size === "number" ? file.size : null,
+    pathname: key, // stable key we used
   };
 }
 // --------------------------------------------
@@ -72,14 +73,14 @@ export async function POST(request: Request) {
   // Upload the file
   const uploaded = await uploadFile(file);
 
-  // Save unified Attachment
+  // Save unified Attachment (contentType must be a string per schema)
   const created = await prisma.attachment.create({
     data: {
-      commonerId: commonerId,
-      applicationId: applicationId,
+      commonerId,
+      applicationId,
       kind: kind as any, // AttachmentKind
       url: uploaded.url,
-      contentType: uploaded.contentType,
+      contentType: uploaded.contentType, // <-- string
       size: uploaded.size ?? undefined,
       label: file.name || undefined,
       pathname: uploaded.pathname,
