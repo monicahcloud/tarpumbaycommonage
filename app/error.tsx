@@ -20,6 +20,9 @@ export default function GlobalError({
       <p className="text-muted-foreground mb-6">
         We hit a server error while processing your request.
       </p>
+      <p className="text-sm text-slate-600 mt-2">
+        {error.digest ? `Digest: ${error.digest}` : null}
+      </p>
       <button
         onClick={() => reset()}
         className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">
