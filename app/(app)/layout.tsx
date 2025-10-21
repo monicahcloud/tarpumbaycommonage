@@ -312,7 +312,7 @@ export default async function PortalLayout({
   const commonerUploadsHref = "/portal/commoner/uploads";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-900">
+    <div className="min-h-screen bg-linear-to-b from-slate-50 to-white text-slate-900">
       {/* Mobile header */}
       <div className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur md:hidden">
         <div className="mx-auto flex h-14 w-full max-w-8xl items-center justify-between px-4">
@@ -326,7 +326,7 @@ export default async function PortalLayout({
 
       <div className="mx-auto grid w-full max-w-8xl grid-cols-1 md:grid-cols-[240px_1fr]">
         {/* Sidebar (desktop) */}
-        <aside className="sticky top-0 hidden h-[100dvh] border-r bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 md:block">
+        <aside className="sticky top-0 hidden h-dvh border-r bg-white/70 backdrop-blur supports-backdrop-filter:bg-white/60 md:block">
           <div className="p-5">
             <Link href="/portal" className="block text-center">
               <h1 className="text-3xl font-semibold tracking-tight">

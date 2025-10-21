@@ -146,7 +146,7 @@ export default async function CommonerUploadsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+    <div className="min-h-screen bg-linear-to-b from-white to-slate-50">
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(79,70,229,0.08),rgba(6,182,212,0.08)_40%,transparent_60%)]" />
@@ -194,7 +194,7 @@ export default async function CommonerUploadsPage() {
               <div
                 key={req.kind}
                 className="relative overflow-hidden rounded-2xl border bg-white/80 p-4 shadow-sm">
-                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
+                <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -264,7 +264,7 @@ export default async function CommonerUploadsPage() {
 
         {/* Other documents */}
         <section className="relative overflow-hidden rounded-2xl border bg-white/80 p-4 shadow-sm">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold">Other documents</h2>
             <Suspense fallback={null}>

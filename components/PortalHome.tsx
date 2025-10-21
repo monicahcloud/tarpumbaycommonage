@@ -124,7 +124,7 @@ export default async function PortalHome() {
   const latestApp = apps[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+    <div className="min-h-screen bg-linear-to-b from-white to-slate-50">
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(79,70,229,0.08),rgba(6,182,212,0.08)_40%,transparent_60%)]" />
@@ -463,7 +463,7 @@ function StatCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border bg-gradient-to-b ${gradient} p-4 shadow-sm`}>
+      className={`rounded-2xl border bg-linear-to-b ${gradient} p-4 shadow-sm`}>
       <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <p className="mt-1 text-3xl font-semibold">{value}</p>
     </div>
