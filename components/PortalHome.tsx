@@ -85,8 +85,8 @@ export default async function PortalHome() {
   });
 
   const hasLot = !!app?.alreadyHasLand && !!app?.lotNumber;
-  const canApplyForLot =
-    !!commoner && commoner.status === "APPROVED" && !hasLot;
+  // const canApplyForLot =
+  //   !!commoner && commoner.status === "APPROVED" && !hasLot;
 
   /* ---------- Lot Application stats & list (only when not already holding a lot) ---------- */
   let submitted = 0,
@@ -175,7 +175,7 @@ export default async function PortalHome() {
               )}
 
               {/* Already has a lot recorded */}
-              {hasLot && app && (
+              {/* {hasLot && app && (
                 <>
                   <span className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium bg-slate-50 text-slate-500">
                     Apply for Land (disabled)
@@ -191,7 +191,7 @@ export default async function PortalHome() {
                     Download PDF <ArrowRight className="h-4 w-4" />
                   </a>
                 </>
-              )}
+              )} */}
             </div>
           </div>
         </div>

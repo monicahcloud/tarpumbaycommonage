@@ -15,6 +15,8 @@ import { AttachmentKind } from "@prisma/client";
 import { UploadButton } from "./upload.client";
 import { DeleteButton } from "./delete.client";
 
+import type { $Enums } from "@prisma/client"; // <-- add this
+
 function fmtDate(d: Date) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
@@ -35,25 +37,34 @@ function fmtSize(bytes?: number | null) {
   return `${n.toFixed(precision)} ${units[i]}`;
 }
 
-const REQUIRED: { kind: AttachmentKind; label: string; accept?: string }[] = [
+const REQUIRED: {
+  kind: $Enums.AttachmentKind;
+  label: string;
+  accept?: string;
+}[] = [
   {
-    kind: "ID_PASSPORT",
+    kind: AttachmentKind.ID_PASSPORT,
     label: "Government ID / Passport",
     accept: "image/*,application/pdf",
   },
   {
-    kind: "BIRTH_CERT",
+    kind: AttachmentKind.BIRTH_CERT,
     label: "Birth Certificate",
     accept: "image/*,application/pdf",
   },
   {
-    kind: "PROOF_OF_LINEAGE",
+    kind: AttachmentKind.PROOF_OF_LINEAGE,
     label: "Proof of Lineage",
     accept: "image/*,application/pdf",
   },
   {
-    kind: "PROOF_OF_ADDRESS",
+    kind: AttachmentKind.PROOF_OF_ADDRESS,
     label: "Proof of Address",
+    accept: "image/*,application/pdf",
+  },
+  {
+    kind: AttachmentKind.PROOF_OF_PAYMENT,
+    label: "Proof of Payment - $25.00",
     accept: "image/*,application/pdf",
   },
 ];

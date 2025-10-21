@@ -26,17 +26,16 @@ enum AppStatus {
 
 enum AttachmentKind {
   // Commoner registration
-  ID_PASSPORT
+   ID_PASSPORT
   BIRTH_CERT
   PROOF_OF_LINEAGE
   PROOF_OF_ADDRESS
-
+  PROOF_OF_PAYMENT
+  OTHER
   // Lot application
   DRAWINGS
   BUSINESS_PLAN
 
-  // generic
-  OTHER
 }
 
 enum PublishStatus {
