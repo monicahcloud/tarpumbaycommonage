@@ -492,7 +492,7 @@ export default function CommonerRegisterClient({
               <li>
                 <a
                   className="underline"
-                  href="/documents/CommitteeRules.pdf"
+                  href="/documents/CommitteRules.pdf"
                   target="_blank"
                   rel="noreferrer">
                   Committee Rules (PDF)

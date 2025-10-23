@@ -422,7 +422,7 @@ export default function ApplyFormClient() {
                     <li>
                       <a
                         className="underline"
-                        href="/documents/CommitteeRules.pdf"
+                        href="/documents/CommitteRules.pdf"
                         target="_blank"
                         rel="noreferrer">
                         Commonage Committee Rules (PDF)
