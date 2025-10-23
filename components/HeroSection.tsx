@@ -53,7 +53,7 @@ const HeroSection = () => {
             asChild
             size="lg"
             className="btn-hero text-lg px-8 py-6 group">
-            <Link href="/apply">
+            <Link href="/portal">
               Apply for Commonage
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>

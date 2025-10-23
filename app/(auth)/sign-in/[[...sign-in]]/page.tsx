@@ -1,25 +1,27 @@
-import { SignIn } from "@clerk/nextjs";
+// app/sign-in/[[...sign-in]]/page.tsx
+"use client";
 
-// Next 15: searchParams is a Promise
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+import { SignedIn, SignedOut, RedirectToSignIn, SignIn } from "@clerk/nextjs";
 
-export default async function SignInPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const sp = await searchParams;
-
-  // helper to normalize param that might be string|string[]
-  const first = (v: string | string[] | undefined) =>
-    Array.isArray(v) ? v[0] : v;
-
-  // support both ?redirect_url=... (Clerk) and ?redirect=...
-  const dest = first(sp.redirect_url) || first(sp.redirect) || "/portal";
-
+export default function SignInPage() {
   return (
-    <div className="mx-auto max-w-md p-6">
-      <SignIn afterSignInUrl={dest} afterSignUpUrl={dest} />
-    </div>
+    <>
+      <SignedOut>
+        <SignIn
+          afterSignInUrl={
+            (typeof window !== "undefined" &&
+              new URLSearchParams(window.location.search).get(
+                "redirect_url"
+              )) ||
+            "/portal"
+          }
+        />
+      </SignedOut>
+
+      <SignedIn>
+        {/* If a signed-in user somehow reaches this page, send them away */}
+        <RedirectToSignIn redirectUrl="/portal" />
+      </SignedIn>
+    </>
   );
 }

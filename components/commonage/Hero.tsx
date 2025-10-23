@@ -21,7 +21,7 @@ export function Hero({ image, alt }: { image: any; alt: string }) {
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <a
-              href="/portal/apply"
+              href="/portal"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-white font-semibold shadow-sm hover:bg-primary/90 transition">
               Apply for Land <ChevronRight className="h-4 w-4" />
             </a>

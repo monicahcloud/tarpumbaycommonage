@@ -70,7 +70,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
-                  href="/apply"
+                  href="/portal"
                   className="transition-colors hover:text-foreground text-muted-foreground">
                   Land Allocation Application
                 </Link>
