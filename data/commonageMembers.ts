@@ -21,7 +21,7 @@ export const BOARD: Person[] = [
     id: "sec",
     name: "Olga Cartwright",
     role: "Secretary",
-    photoUrl: "/team/mary.jpg",
+    photoUrl: "/team/kera.jpeg",
     bio: "Maintains meeting minutes, correspondence, and the committee’s official records.",
   },
   {
