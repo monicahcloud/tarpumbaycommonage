@@ -20,7 +20,7 @@ export default async function AdminLayout({
   }
   if (!gate.ok) {
     // signed in but not allowed → no loop
-    redirect("/admin/forbidden");
+    redirect("/forbidden");
   }
 
   return (
@@ -29,8 +29,8 @@ export default async function AdminLayout({
         <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
           <h1 className="font-semibold">Admin</h1>
           <nav className="text-sm">
-            <Link href="/admin/applicants" className="hover:underline">
-              Applicants
+            <Link href="/admin/applications" className="hover:underline">
+              Applications
             </Link>
           </nav>
         </div>

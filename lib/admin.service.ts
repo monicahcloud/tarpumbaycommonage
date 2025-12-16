@@ -133,3 +133,145 @@ export async function updateCommonerStatus(
     select: { id: true, status: true, approvedAt: true },
   });
 }
+
+export type ApplicationListItem = {
+  id: string;
+  status: string;
+  createdAt: Date;
+  submittedAt: Date | null;
+  purpose: string;
+  alreadyHasLand: boolean;
+  lotNumber: string | null;
+
+  applicant: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+  };
+
+  user: {
+    id: string;
+    email: string;
+    clerkId: string;
+    commonerStatus: string | null;
+  };
+
+  attachmentsCount: number;
+};
+
+export async function listApplications(args: {
+  q?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const pageSize = Math.min(Math.max(args.pageSize ?? 25, 10), 100);
+  const page = Math.max(args.page ?? 1, 1);
+  const skip = (page - 1) * pageSize;
+
+  const q = (args.q ?? "").trim();
+  const status = (args.status ?? "").trim();
+
+  const where: any = {};
+
+  if (status && status !== "ALL") {
+    where.status = status;
+  }
+
+  if (q) {
+    // Search in Application snapshot fields and User email
+    where.OR = [
+      { email: { contains: q, mode: "insensitive" } },
+      { firstName: { contains: q, mode: "insensitive" } },
+      { lastName: { contains: q, mode: "insensitive" } },
+      { purpose: { contains: q, mode: "insensitive" } },
+      { user: { email: { contains: q, mode: "insensitive" } } },
+    ];
+  }
+
+  const [total, rows] = await prisma.$transaction([
+    prisma.application.count({ where }),
+    prisma.application.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }],
+      skip,
+      take: pageSize,
+      include: {
+        user: {
+          select: {
+            id: true,
+            clerkId: true,
+            email: true,
+            commoner: { select: { status: true } },
+          },
+        },
+        _count: { select: { attachments: true } },
+      },
+    }),
+  ]);
+
+  const items: ApplicationListItem[] = rows.map((a) => ({
+    id: a.id,
+    status: a.status,
+    createdAt: a.createdAt,
+    submittedAt: a.submittedAt,
+    purpose: a.purpose,
+    alreadyHasLand: a.alreadyHasLand,
+    lotNumber: a.lotNumber,
+
+    applicant: {
+      firstName: a.firstName,
+      lastName: a.lastName,
+      email: a.email,
+      phone: a.phone,
+    },
+
+    user: {
+      id: a.user.id,
+      email: a.user.email,
+      clerkId: a.user.clerkId,
+      commonerStatus: a.user.commoner?.status ?? null,
+    },
+
+    attachmentsCount: a._count.attachments,
+  }));
+
+  return {
+    items,
+    page,
+    pageSize,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  };
+}
+
+export async function getApplicationForReview(id: string) {
+  return prisma.application.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          clerkId: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+          commoner: {
+            select: {
+              id: true,
+              status: true,
+              submittedAt: true,
+              approvedAt: true,
+              attachments: true,
+            },
+          },
+        },
+      },
+      attachments: true,
+      statusLogs: { orderBy: { createdAt: "desc" }, take: 10 },
+      adminEvents: { orderBy: { createdAt: "desc" }, take: 50 },
+    },
+  });
+}

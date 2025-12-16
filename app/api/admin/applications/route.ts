@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/api/admin/applicants/route.ts
+
 import { NextResponse } from "next/server";
 import { requireStaffOrAdmin } from "@/lib/authz";
 import { listApplicants } from "@/lib/admin.service";

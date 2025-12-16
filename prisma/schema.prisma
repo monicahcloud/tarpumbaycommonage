@@ -148,7 +148,7 @@ model Application {
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   attachments     Attachment[] @relation("ApplicationAttachments")   // ✅ keep this one
   statusLogs      StatusLog[]
-
+  adminEvents     AdminEvent[]
   @@index([userId])
   @@index([status, createdAt])
   @@index([commonerId])
@@ -276,3 +276,27 @@ model Document {
   @@index([status, updatedAt])
   @@index([category])
 }
+
+enum AdminEventType {
+  STATUS_CHANGED
+  ATTACHMENT_ADDED
+  ATTACHMENT_DELETED
+  NOTE_ADDED
+  REOPENED
+}
+
+model AdminEvent {
+  id            String        @id @default(cuid())
+  applicationId String
+  type          AdminEventType
+  actorClerkId  String
+  message       String
+  meta          Json?
+  createdAt     DateTime      @default(now())
+
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+  @@index([type, createdAt])
+}
+
