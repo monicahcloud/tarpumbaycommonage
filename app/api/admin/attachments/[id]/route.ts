@@ -7,18 +7,20 @@ export const runtime = "nodejs";
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const authz = await requireStaffOrAdmin();
   if (!authz.ok) {
     return NextResponse.json({ error: authz.error }, { status: authz.status });
   }
 
+  const { id } = await context.params;
+
   const url = new URL(req.url);
   const applicationIdFromQuery = url.searchParams.get("applicationId") || null;
 
   const attachment = await prisma.attachment.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       pathname: true,

@@ -6,14 +6,16 @@ export const runtime = "nodejs";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const authz = await requireStaffOrAdmin();
   if (!authz.ok) {
     return NextResponse.json({ error: authz.error }, { status: authz.status });
   }
 
-  const data = await getApplicant(params.id);
+  const { id } = await context.params;
+
+  const data = await getApplicant(id);
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json(data);
