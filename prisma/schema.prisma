@@ -300,3 +300,8 @@ model AdminEvent {
   @@index([type, createdAt])
 }
 
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}

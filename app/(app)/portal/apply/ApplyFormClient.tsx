@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // -------------------- Validation --------------------
 const schema = z.object({
@@ -61,7 +62,7 @@ export type ApplyFormData = z.infer<typeof schema>;
 export default function ApplyFormClient() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 4 = Preview
   const [applicationId, setApplicationId] = useState<string | null>(null);
-
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -183,6 +184,8 @@ export default function ApplyFormClient() {
     }
     const { id } = await res.json();
     setApplicationId(id);
+    router.push("/portal?justApplied=1");
+    router.refresh();
   }
 
   // ------------- Success -------------

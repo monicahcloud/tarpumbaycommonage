@@ -1,43 +1,49 @@
+import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { del } from "@vercel/blob"; // replace if using another storage
+import { del } from "@vercel/blob";
+
+export const runtime = "nodejs";
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!dbUser) return new Response("Not Found", { status: 404 });
+  if (!dbUser)
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const file = await prisma.attachment.findUnique({
-    where: { id },
+    where: { id: params.id },
     select: {
       id: true,
       pathname: true,
-      // ownership via either commoner or application
-      commoner: { select: { userId: true } },
-      application: { select: { userId: true } },
+      commoner: { select: { user: { select: { clerkId: true } } } },
+      application: { select: { user: { select: { clerkId: true } } } },
     },
   });
-  if (!file) return new Response("Not Found", { status: 404 });
 
-  const ownerId = file.commoner?.userId ?? file.application?.userId ?? null;
-  if (!ownerId || ownerId !== dbUser.id)
-    return new Response("Forbidden", { status: 403 });
+  if (!file) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
-  // Delete from storage (best-effort)
+  const ownerClerkId =
+    file.commoner?.user.clerkId ?? file.application?.user.clerkId ?? null;
+
+  if (!ownerClerkId || ownerClerkId !== userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   if (file.pathname) {
     try {
       await del(file.pathname);
     } catch {
-      // swallow; we still remove DB row
+      // best-effort
     }
   }
 
-  await prisma.attachment.delete({ where: { id } });
-  return new Response(null, { status: 204 });
+  await prisma.attachment.delete({ where: { id: file.id } });
+  return new NextResponse(null, { status: 204 });
 }

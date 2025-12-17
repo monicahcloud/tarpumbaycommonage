@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/(app)/portal/application/[id]/uploads/upload.client.tsx
 "use client";
-import { useState } from "react";
-import { upload } from "@vercel/blob/client";
+
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AttachmentKind } from "@prisma/client";
+import { toast } from "sonner";
 
 export function UploadButton({
   applicationId,
@@ -16,78 +16,61 @@ export function UploadButton({
   accept?: string;
 }) {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
-  const [pct, setPct] = useState<number | null>(null);
 
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const inputEl = e.currentTarget; // capture before await
+  const pick = () => inputRef.current?.click();
+
+  const onChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const inputEl = e.currentTarget;
     const file = inputEl.files?.[0];
     if (!file) return;
 
+    const t = toast.loading("Uploading…");
     setBusy(true);
-    setPct(0);
+
     try {
-      const res = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/uploads",
-        clientPayload: JSON.stringify({ applicationId, kind }),
-        contentType: file.type,
-        onUploadProgress: (
-          evt: number | { loaded?: number; total?: number } | undefined
-        ) => {
-          if (typeof evt === "number") setPct(Math.round(evt * 100));
-          else {
-            const loaded = evt?.loaded ?? 0,
-              total = evt?.total ?? 1;
-            setPct(Math.round((loaded / total) * 100));
-          }
-        },
-      });
+      const fd = new FormData();
+      fd.set("kind", kind);
+      fd.set("applicationId", applicationId);
+      fd.set("file", file);
 
-      // res has the blob URL/path; now write to DB in a Node route
-      const pathname = new URL(res.url).pathname;
-
-      const db = await fetch("/api/attachments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          applicationId,
-          kind,
-          url: res.url,
-          contentType: file.type ?? "application/octet-stream",
-          size: file.size,
-          pathname,
-        }),
-      });
-      if (!db.ok) {
-        const txt = await db.text();
-        throw new Error(txt || "DB save failed");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `Upload failed (${res.status})`);
       }
 
+      toast.success("Uploaded", { id: t });
       router.refresh();
     } catch (err: any) {
-      alert(err?.message ?? "Upload failed");
+      toast.error("Upload failed", {
+        id: t,
+        description: err?.message ?? "Something went wrong.",
+      });
     } finally {
       setBusy(false);
-      setPct(null);
-      inputEl.value = ""; // safe; we captured inputEl before await
+      inputEl.value = "";
     }
-  }
+  };
 
   return (
-    <label className="inline-flex items-center gap-2 text-sm">
+    <>
       <input
+        ref={inputRef}
         type="file"
-        accept={accept}
-        onChange={onPick}
+        accept={accept ?? "image/*,application/pdf"}
+        className="hidden"
+        onChange={onChange}
         disabled={busy}
-        className="block w-full cursor-pointer text-sm file:mr-3 file:rounded file:border file:bg-muted file:px-3 file:py-1.5 hover:file:bg-muted/80 disabled:opacity-60"
       />
-      {busy && (
-        <span className="text-xs text-slate-600">
-          {pct === null ? "Uploading…" : `Uploading… ${pct}%`}
-        </span>
-      )}
-    </label>
+      <button
+        type="button"
+        onClick={pick}
+        disabled={busy}
+        className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50">
+        {busy ? "Uploading…" : "Upload file"}
+      </button>
+    </>
   );
 }

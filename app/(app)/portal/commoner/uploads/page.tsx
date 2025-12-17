@@ -1,3 +1,4 @@
+// app/(app)/portal/commoner/uploads/page.tsx
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -15,7 +16,8 @@ import { AttachmentKind } from "@prisma/client";
 import { UploadButton } from "./upload.client";
 import { DeleteButton } from "./delete.client";
 
-import type { $Enums } from "@prisma/client"; // <-- add this
+import type { $Enums } from "@prisma/client";
+import { getCommonerDocsStatus } from "@/lib/commonerRequirements";
 
 function fmtDate(d: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -69,6 +71,12 @@ const REQUIRED: {
   },
 ];
 
+function kindLabel(kind: AttachmentKind) {
+  return (
+    REQUIRED.find((r) => r.kind === kind)?.label ?? kind.replaceAll("_", " ")
+  );
+}
+
 function PreviewThumb({
   url,
   contentType,
@@ -119,7 +127,11 @@ function PreviewThumb({
   );
 }
 
-export default async function CommonerUploadsPage() {
+export default async function CommonerUploadsPage({
+  searchParams,
+}: {
+  searchParams?: { missing?: string };
+}) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/portal/commoner/uploads");
 
@@ -136,6 +148,9 @@ export default async function CommonerUploadsPage() {
   });
   if (!commoner) redirect("/portal/register/commoner");
 
+  // ✅ compute missing required docs (for banner + for gating UX)
+  const docs = await getCommonerDocsStatus(commoner.id);
+
   // group attachments
   const attachments = commoner.attachments;
   const latestByKind = new Map<AttachmentKind, (typeof attachments)[number]>();
@@ -144,6 +159,9 @@ export default async function CommonerUploadsPage() {
     if (!latestByKind.has(a.kind)) latestByKind.set(a.kind, a);
     byKind.set(a.kind, (byKind.get(a.kind) ?? 0) + 1);
   }
+
+  const showMissingBanner =
+    searchParams?.missing === "1" || searchParams?.missing === "true";
 
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-slate-50">
@@ -184,6 +202,21 @@ export default async function CommonerUploadsPage() {
       </section>
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-16 space-y-8">
+        {/* ✅ Missing-docs banner (shown when redirected here from Apply for Land) */}
+        {showMissingBanner && !docs.ok && (
+          <div className="rounded-2xl border bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200">
+            <div className="font-semibold">
+              Before you can apply for land, please upload your missing required
+              Commoner documents:
+            </div>
+            <ul className="mt-2 list-disc pl-5">
+              {docs.missing.map((k) => (
+                <li key={k}>{kindLabel(k)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Required blocks */}
         <section className="grid gap-4 sm:grid-cols-2">
           {REQUIRED.map((req) => {

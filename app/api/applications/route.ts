@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// app/api/applications/route.ts
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { ensureUser } from "@/lib/ensureUser";
@@ -16,6 +17,7 @@ const schema = z.object({
   ancestry: z.string().optional(),
   purpose: z.string().min(3),
   signature: z.string().optional(),
+  signDate: z.string().optional(), // optional if you want it
 });
 
 function parseDateOrNull(v?: string) {
@@ -26,7 +28,6 @@ function parseDateOrNull(v?: string) {
 
 export async function POST(req: Request) {
   try {
-    // ✅ MUST await
     const { userId } = await auth();
     if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -37,30 +38,62 @@ export async function POST(req: Request) {
     }
     const input = parsed.data;
 
-    // Ensure we have a DB user row (handles first-visit / mismatches)
+    // Ensure user row exists
     let user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) {
       user = await ensureUser();
       if (!user) return new Response("Unauthorized", { status: 401 });
     }
 
-    const app = await prisma.application.create({
-      data: {
-        userId: user.id,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        email: input.email,
-        phone: input.phone ?? null,
-        dob: parseDateOrNull(input.dob),
-        address: input.address ?? null,
-        ancestry: input.ancestry ?? null,
-        purpose: input.purpose,
-        signature: input.signature ?? null,
-        status: "SUBMITTED", // make sure your enum includes this
-        submittedAt: new Date(),
+    // Because Application.userId is UNIQUE, we must update if one exists
+    const existing = await prisma.application.findUnique({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        commonerId: true, // preserve
+        alreadyHasLand: true,
+        lotNumber: true,
       },
-      select: { id: true },
     });
+
+    // If they already have land recorded, don’t let them submit a land application
+    if (existing?.alreadyHasLand || existing?.lotNumber) {
+      return Response.json(
+        { error: "Lot already recorded for this user." },
+        { status: 403 }
+      );
+    }
+
+    const data = {
+      firstName: input.firstName,
+      lastName: input.lastName,
+      email: input.email,
+      phone: input.phone ?? null,
+      dob: parseDateOrNull(input.dob),
+      address: input.address ?? null,
+      ancestry: input.ancestry ?? null,
+      purpose: input.purpose,
+      signature: input.signature ?? null,
+      signDate: parseDateOrNull(input.signDate),
+      status: "SUBMITTED" as const,
+      submittedAt: new Date(),
+    };
+
+    const app = existing
+      ? await prisma.application.update({
+          where: { id: existing.id },
+          data,
+          select: { id: true },
+        })
+      : await prisma.application.create({
+          data: {
+            userId: user.id,
+            // commonerId should ideally be set by /portal/land/apply shell creator
+            // but if you want to auto-link here too, we can add it
+            ...data,
+          },
+          select: { id: true },
+        });
 
     return Response.json({ id: app.id });
   } catch (err: any) {

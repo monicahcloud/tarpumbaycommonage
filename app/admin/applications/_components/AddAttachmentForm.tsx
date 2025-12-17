@@ -205,8 +205,8 @@ export default function AddAttachmentForm({
   defaultKind = "OTHER",
   keySeed,
 }: {
-  applicationId: string;
-  commonerId: string | null;
+  applicationId?: string | null;
+  commonerId?: string | null;
   defaultTarget?: AttachmentTarget;
   defaultKind?: AttachmentKind;
   // change this to force the form to reset selections when user clicks "Upload" from checklist

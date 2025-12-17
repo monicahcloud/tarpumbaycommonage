@@ -1,9 +1,7 @@
-// app/(app)/portal/application/[id]/uploads/page.tsx — Beautiful, polished uploads UI
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Suspense } from "react";
 import {
   BadgeCheck,
   FileDown,
@@ -16,7 +14,6 @@ import { DeleteButton } from "./delete.client";
 import { AttachmentKind } from "@prisma/client";
 import Image from "next/image";
 
-// Next.js 15 allows awaiting params (typed as a Promise)
 type Params = Promise<{ id: string }>;
 
 function fmtDate(d: Date) {
@@ -52,33 +49,10 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${cls}`}>
-      {s.replace("_", " ")}
+      {s.replaceAll("_", " ")}
     </span>
   );
 }
-
-const REQUIRED: { kind: AttachmentKind; label: string; accept?: string }[] = [
-  {
-    kind: "ID_PASSPORT",
-    label: "Government ID / Passport",
-    accept: "image/*,application/pdf",
-  },
-  {
-    kind: "BIRTH_CERT",
-    label: "Birth Certificate",
-    accept: "image/*,application/pdf",
-  },
-  {
-    kind: "DRAWINGS",
-    label: "Preliminary Drawings",
-    accept: "application/pdf,image/*",
-  },
-  {
-    kind: "PROOF_OF_ADDRESS",
-    label: "Proof of Address",
-    accept: "image/*,application/pdf",
-  },
-];
 
 function PreviewThumb({
   url,
@@ -107,7 +81,6 @@ function PreviewThumb({
   if (isPdf) {
     return (
       <a href={url} target="_blank" rel="noreferrer" className="block">
-        {/* Lightweight inline hint; click opens full PDF */}
         <div className="grid h-28 w-28 place-items-center rounded-md ring-1 ring-slate-200 bg-slate-50">
           <FileText className="h-6 w-6 text-slate-500" />
         </div>
@@ -131,32 +104,71 @@ function PreviewThumb({
   );
 }
 
+// Base docs satisfied via CommonerRegistration
+const COMMONER_KINDS: AttachmentKind[] = [
+  "ID_PASSPORT",
+  "BIRTH_CERT",
+  "PROOF_OF_LINEAGE",
+  "PROOF_OF_ADDRESS",
+  "PROOF_OF_PAYMENT",
+];
+
+// Application-only requirements (no duplicates)
+const APPLICATION_REQUIRED: {
+  kind: AttachmentKind;
+  label: string;
+  accept?: string;
+}[] = [
+  {
+    kind: "DRAWINGS",
+    label: "Preliminary Drawings",
+    accept: "application/pdf,image/*",
+  },
+  {
+    kind: "BUSINESS_PLAN",
+    label: "Business Plan (Commercial only)",
+    accept: "application/pdf",
+  },
+];
+
 export default async function UploadsPage({ params }: { params: Params }) {
   const { id } = await params;
 
   const { userId } = await auth();
-  if (!userId) redirect("/sign-in?redirect_url=/portal");
+  if (!userId)
+    redirect(`/sign-in?redirect_url=/portal/application/${id}/uploads`);
+
+  const me = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!me) return notFound();
 
   const app = await prisma.application.findUnique({
     where: { id },
-    include: { user: true, attachments: true },
+    include: {
+      user: true,
+      attachments: { orderBy: { createdAt: "desc" } },
+      commoner: {
+        include: {
+          attachments: { orderBy: { createdAt: "desc" } },
+        },
+      },
+    },
   });
   if (!app) return notFound();
+  if (app.userId !== me.id) return notFound();
 
-  const me = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!me || app.userId !== me.id) return notFound();
+  const appAttachments = app.attachments ?? [];
+  const commonerAttachments = app.commoner?.attachments ?? [];
 
-  const attachments = app.attachments.sort(
-    (a, b) => +b.createdAt - +a.createdAt
-  );
+  const commonerLatest = new Map<
+    AttachmentKind,
+    (typeof commonerAttachments)[number]
+  >();
+  for (const a of commonerAttachments)
+    if (!commonerLatest.has(a.kind)) commonerLatest.set(a.kind, a);
 
-  const latestByKind = new Map<AttachmentKind, (typeof attachments)[number]>();
-  for (const a of attachments)
-    if (!latestByKind.has(a.kind)) latestByKind.set(a.kind, a);
-
-  const byKind = new Map<AttachmentKind, number>();
-  for (const a of attachments)
-    byKind.set(a.kind, (byKind.get(a.kind) ?? 0) + 1);
+  const appLatest = new Map<AttachmentKind, (typeof appAttachments)[number]>();
+  for (const a of appAttachments)
+    if (!appLatest.has(a.kind)) appLatest.set(a.kind, a);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
@@ -178,6 +190,7 @@ export default async function UploadsPage({ params }: { params: Params }) {
                 <StatusBadge status={app.status} />
               </p>
             </div>
+
             <div className="flex gap-2">
               <Link
                 href="/portal/application"
@@ -195,12 +208,45 @@ export default async function UploadsPage({ params }: { params: Params }) {
       </section>
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-16 space-y-8">
-        {/* Required blocks */}
+        {/* Commoner docs (reused) */}
+        <section className="rounded-2xl border bg-white/80 p-4 shadow-sm">
+          <h2 className="text-base font-semibold mb-3">
+            Documents from Commoner Registration
+          </h2>
+          {!app.commoner ? (
+            <p className="text-sm text-slate-600">
+              No linked Commoner Registration found. This application should be
+              started only after Commoner approval.
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {COMMONER_KINDS.map((kind) => {
+                const doc = commonerLatest.get(kind);
+                return (
+                  <div
+                    key={kind}
+                    className="flex items-center justify-between rounded-xl border px-3 py-2 text-sm">
+                    <span>{kind.replaceAll("_", " ")}</span>
+                    {doc ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                        <BadgeCheck className="h-4 w-4" /> Provided
+                      </span>
+                    ) : (
+                      <span className="text-rose-600">Missing</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Application-only required docs */}
         <section className="grid gap-4 sm:grid-cols-2">
-          {REQUIRED.map((req) => {
-            const count = byKind.get(req.kind) ?? 0;
-            const ok = count > 0;
-            const latest = latestByKind.get(req.kind);
+          {APPLICATION_REQUIRED.map((req) => {
+            const latest = appLatest.get(req.kind);
+            const ok = !!latest;
+
             return (
               <div
                 key={req.kind}
@@ -211,11 +257,7 @@ export default async function UploadsPage({ params }: { params: Params }) {
                   <div>
                     <p className="text-sm font-medium">{req.label}</p>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      {ok
-                        ? count === 1
-                          ? "File uploaded"
-                          : `${count} files uploaded`
-                        : "No file uploaded yet"}
+                      {ok ? "File uploaded" : "No file uploaded yet"}
                     </p>
                   </div>
                   {ok ? (
@@ -229,7 +271,7 @@ export default async function UploadsPage({ params }: { params: Params }) {
 
                 <div className="mt-3 grid grid-cols-[auto_1fr] items-start gap-4">
                   <div>
-                    {ok && latest ? (
+                    {latest ? (
                       <PreviewThumb
                         url={latest.url}
                         contentType={latest.contentType}
@@ -242,15 +284,12 @@ export default async function UploadsPage({ params }: { params: Params }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Suspense fallback={null}>
-                      <UploadButton
-                        applicationId={app.id}
-                        kind={req.kind}
-                        accept={req.accept}
-                      />
-                    </Suspense>
-
-                    {ok && latest && (
+                    <UploadButton
+                      applicationId={app.id}
+                      kind={req.kind}
+                      accept={req.accept}
+                    />
+                    {latest ? (
                       <div className="text-xs text-slate-600">
                         <div className="truncate">
                           <a
@@ -265,7 +304,7 @@ export default async function UploadsPage({ params }: { params: Params }) {
                           {fmtDate(latest.createdAt)}
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -273,21 +312,21 @@ export default async function UploadsPage({ params }: { params: Params }) {
           })}
         </section>
 
-        {/* Other documents */}
+        {/* Other application docs */}
         <section className="relative overflow-hidden rounded-2xl border bg-white/80 p-4 shadow-sm">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold">Other documents</h2>
-            <Suspense fallback={null}>
-              <UploadButton applicationId={app.id} kind="OTHER" />
-            </Suspense>
+            <h2 className="text-base font-semibold">
+              Other application documents
+            </h2>
+            <UploadButton applicationId={app.id} kind="OTHER" />
           </div>
 
-          {attachments.length === 0 ? (
+          {appAttachments.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed bg-slate-50/60 p-8 text-center">
               <UploadCloud className="h-5 w-5 text-slate-500" />
               <p className="text-sm text-slate-600">
-                No documents uploaded yet.
+                No application documents uploaded yet.
               </p>
             </div>
           ) : (
@@ -303,11 +342,13 @@ export default async function UploadsPage({ params }: { params: Params }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {attachments.map((f) => (
+                  {appAttachments.map((f) => (
                     <tr
                       key={f.id}
                       className="align-middle hover:bg-slate-50/60">
-                      <td className="px-3 py-3">{f.kind.replace("_", " ")}</td>
+                      <td className="px-3 py-3">
+                        {f.kind.replaceAll("_", " ")}
+                      </td>
                       <td className="px-3 py-3">
                         <a
                           className="text-blue-700 hover:underline"
@@ -323,9 +364,7 @@ export default async function UploadsPage({ params }: { params: Params }) {
                         {fmtDate(f.createdAt)}
                       </td>
                       <td className="px-3 py-3">
-                        <Suspense fallback={null}>
-                          <DeleteButton attachmentId={f.id} />
-                        </Suspense>
+                        <DeleteButton attachmentId={f.id} />
                       </td>
                     </tr>
                   ))}

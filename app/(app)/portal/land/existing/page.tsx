@@ -50,6 +50,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import ExistingLotForm from "./ExistingLotForm";
+import { getLandApplicationsSetting } from "@/lib/settings";
 
 export default async function ExistingLotStart() {
   const { userId } = await auth();
@@ -57,6 +58,9 @@ export default async function ExistingLotStart() {
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } });
   if (!user) redirect("/portal");
+
+  const { open } = await getLandApplicationsSetting();
+  if (!open) redirect("/portal?land=closed");
 
   const reg = await prisma.commonerRegistration.findUnique({
     where: { userId: user.id },

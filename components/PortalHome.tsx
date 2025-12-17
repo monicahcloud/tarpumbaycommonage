@@ -1,8 +1,10 @@
-// app/(app)/portal/page.tsx (or wherever your PortalHome lives)
+// app/(app)/portal/page.tsx
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { getLandApplicationsSetting } from "@/lib/settings";
+import { getCommonerDocsStatus } from "@/lib/commonerRequirements";
 
 /* ---------------- helpers ---------------- */
 function fmtDate(d: Date) {
@@ -20,7 +22,7 @@ function pillClass(status: string) {
     UNDER_REVIEW: "bg-amber-50 text-amber-700 ring-amber-200",
     APPROVED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
     REJECTED: "bg-rose-50 text-rose-700 ring-rose-200",
-    PENDING: "bg-blue-50 text-blue-700 ring-blue-200", // for Commoner panel default
+    PENDING: "bg-blue-50 text-blue-700 ring-blue-200",
   };
   return map[s] ?? "bg-slate-100 text-slate-700 ring-slate-200";
 }
@@ -32,7 +34,7 @@ function StatusBadge({ status }: { status: string }) {
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${pillClass(
         s
       )}`}>
-      {s.replace("_", " ")}
+      {s.replaceAll("_", " ")}
     </span>
   );
 }
@@ -85,10 +87,19 @@ export default async function PortalHome() {
   });
 
   const hasLot = !!app?.alreadyHasLand && !!app?.lotNumber;
-  // const canApplyForLot =
-  //   !!commoner && commoner.status === "APPROVED" && !hasLot;
 
-  /* ---------- Lot Application stats & list (only when not already holding a lot) ---------- */
+  /* ---------- Site toggle ---------- */
+  const { open: landOpen } = await getLandApplicationsSetting();
+
+  /* ---------- Docs gate (only check if approved commoner) ---------- */
+  const docs = isApprovedCommoner
+    ? await getCommonerDocsStatus(commoner!.id)
+    : null;
+
+  const canApplyForLand =
+    isApprovedCommoner && landOpen && !!docs?.ok && !hasLot;
+
+  /* ---------- Lot Application stats & list ---------- */
   let submitted = 0,
     underReview = 0,
     approved = 0,
@@ -140,7 +151,7 @@ export default async function PortalHome() {
               </p>
             </div>
 
-            {/* Top-right actions adapt to user state */}
+            {/* Top-right actions */}
             <div className="flex flex-wrap gap-2">
               {!hasCommoner && (
                 <Link
@@ -158,14 +169,26 @@ export default async function PortalHome() {
                 </Link>
               )}
 
-              {/* Approved & does NOT already have a lot */}
               {isApprovedCommoner && !hasLot && (
                 <>
-                  <Link
-                    href="/portal/land/apply"
-                    className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
-                    Apply for Land <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  {canApplyForLand ? (
+                    <Link
+                      href="/portal/land/apply"
+                      className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
+                      Apply for Land <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : !landOpen ? (
+                    <span className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium bg-slate-50 text-slate-500">
+                      Apply for Land (closed)
+                    </span>
+                  ) : (
+                    <Link
+                      href="/portal/commoner/uploads?missing=1"
+                      className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
+                      Upload required docs <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
+
                   <Link
                     href="/portal/land/existing"
                     className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
@@ -173,32 +196,22 @@ export default async function PortalHome() {
                   </Link>
                 </>
               )}
-
-              {/* Already has a lot recorded */}
-              {/* {hasLot && app && (
-                <>
-                  <span className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium bg-slate-50 text-slate-500">
-                    Apply for Land (disabled)
-                  </span>
-                  <Link
-                    href={`/portal/application/${app.id}`}
-                    className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
-                    View Lot Details <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <a
-                    href={`/api/applications/${app.id}/pdf`}
-                    className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
-                    Download PDF <ArrowRight className="h-4 w-4" />
-                  </a>
-                </>
-              )} */}
             </div>
           </div>
         </div>
       </section>
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-16 space-y-8">
-        {/* COMMONER STATUS PANEL */}
+        {/* Banner when land closed */}
+        {isApprovedCommoner && !hasLot && !landOpen && (
+          <div className="rounded-2xl border bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200">
+            Land applications are currently <strong>closed</strong>. You can
+            still keep your Commoner registration up to date, and we’ll reopen
+            applications when the Committee is ready.
+          </div>
+        )}
+
+        {/* Commoner panel */}
         <section className="rounded-2xl border bg-white/80 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">Commoner Registration</h2>
@@ -243,11 +256,24 @@ export default async function PortalHome() {
 
             {isApprovedCommoner && !hasLot && (
               <>
-                <Link
-                  href="/portal/land/apply"
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                  Apply for Land
-                </Link>
+                {canApplyForLand ? (
+                  <Link
+                    href="/portal/land/apply"
+                    className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                    Apply for Land
+                  </Link>
+                ) : !landOpen ? (
+                  <span className="rounded-xl border px-4 py-2 text-sm text-slate-500 bg-slate-50">
+                    Apply for Land (closed)
+                  </span>
+                ) : (
+                  <Link
+                    href="/portal/commoner/uploads?missing=1"
+                    className="rounded-xl border px-4 py-2 text-sm hover:bg-slate-50">
+                    Upload required docs
+                  </Link>
+                )}
+
                 <Link
                   href="/portal/land/existing"
                   className="rounded-xl border px-4 py-2 text-sm hover:bg-slate-50">
@@ -271,7 +297,7 @@ export default async function PortalHome() {
           </div>
         </section>
 
-        {/* LOT APPLICATION STAT CARDS — show only AFTER approval AND when not already holding a lot */}
+        {/* LOT APPLICATION STAT CARDS */}
         {isApprovedCommoner && !hasLot && (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -297,7 +323,6 @@ export default async function PortalHome() {
               />
             </div>
 
-            {/* Recent application */}
             <section className="rounded-2xl border bg-white/70 p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-base font-semibold">Recent application</h2>
@@ -372,40 +397,7 @@ export default async function PortalHome() {
           </>
         )}
 
-        {/* If a lot is already recorded, show the lot summary instead */}
-        {hasLot && app && (
-          <section className="rounded-2xl border bg-white/70 p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-base font-semibold">Your Lot</h2>
-              <StatusBadge status="APPROVED" />
-            </div>
-            <div className="grid gap-2 text-sm">
-              <div>
-                <span className="text-slate-500">Lot Number: </span>
-                <strong>{app.lotNumber}</strong>
-              </div>
-              <div>
-                <span className="text-slate-500">Record ID: </span>
-                <code className="text-xs">{app.id}</code>
-              </div>
-              {/* Room for: nextSteps, feeAmount, etc. */}
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Link
-                href={`/portal/application/${app.id}`}
-                className="rounded border px-3 py-1 text-xs hover:bg-slate-50">
-                View Details
-              </Link>
-              <a
-                className="rounded border px-3 py-1 text-xs hover:bg-slate-50"
-                href={`/api/applications/${app.id}/pdf`}>
-                PDF
-              </a>
-            </div>
-          </section>
-        )}
-
-        {/* Info boxes (always visible) */}
+        {/* Info boxes */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-2xl border bg-white/80 p-5 shadow-sm">
             <h3 className="text-base font-semibold">Fees</h3>
@@ -507,7 +499,6 @@ function EmptyState({
     );
   }
 
-  // Approved & no land apps
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-slate-50/60 px-6 py-10 text-center">
       <p className="text-sm text-slate-600">You have no applications yet.</p>

@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AttachmentKind } from "@prisma/client";
 import { UploadCloud } from "lucide-react";
+import { toast } from "sonner";
 
 export function UploadButton({
   commonerId,
@@ -21,12 +23,14 @@ export function UploadButton({
   const pick = () => inputRef.current?.click();
 
   const onChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
-    const file = e.target.files?.[0];
+    const inputEl = e.currentTarget;
+    const file = inputEl.files?.[0];
     if (!file) return;
+
+    const t = toast.loading("Uploading…");
     setBusy(true);
 
     try {
-      // unified uploads API
       const fd = new FormData();
       fd.set("kind", kind);
       fd.set("commonerId", commonerId);
@@ -34,14 +38,20 @@ export function UploadButton({
 
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       if (!res.ok) {
-        const t = await res.text();
-        alert(`Upload failed. ${t}`);
-        return;
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `Upload failed (${res.status})`);
       }
+
+      toast.success("Uploaded", { id: t });
       router.refresh();
+    } catch (err: any) {
+      toast.error("Upload failed", {
+        id: t,
+        description: err?.message ?? "Something went wrong.",
+      });
     } finally {
       setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
+      inputEl.value = "";
     }
   };
 
@@ -53,6 +63,7 @@ export function UploadButton({
         accept={accept ?? "image/*,application/pdf"}
         className="hidden"
         onChange={onChange}
+        disabled={busy}
       />
       <button
         type="button"

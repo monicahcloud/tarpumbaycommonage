@@ -136,7 +136,7 @@ export default function CommonerFormClient({
       fd.append("passport", passport);
       fd.append("birthCert", birthCert);
 
-      const up = await fetch(`/api/commoner/${id}/uploads`, {
+      const up = await fetch(`/api/uploads`, {
         method: "POST",
         body: fd,
       });
