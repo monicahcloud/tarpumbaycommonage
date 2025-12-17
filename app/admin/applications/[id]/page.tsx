@@ -131,7 +131,6 @@ export default async function AdminApplicationReviewPage({
                       key={a.id}
                       attachment={a as any}
                       scope="commoner"
-                      applicationId={app.id}
                     />
                   ))}
                 </div>
@@ -148,7 +147,7 @@ export default async function AdminApplicationReviewPage({
                     <AttachmentThumb
                       key={a.id}
                       attachment={a as any}
-                      scope="commoner"
+                      scope="application"
                       applicationId={app.id}
                     />
                   ))}

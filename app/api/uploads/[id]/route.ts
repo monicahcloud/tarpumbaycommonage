@@ -7,18 +7,22 @@ export const runtime = "nodejs";
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const { userId } = await auth();
-  if (!userId)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!dbUser)
+  if (!dbUser) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
 
   const file = await prisma.attachment.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       pathname: true,
@@ -36,11 +40,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // best-effort blob delete
   if (file.pathname) {
     try {
       await del(file.pathname);
     } catch {
-      // best-effort
+      // swallow
     }
   }
 
