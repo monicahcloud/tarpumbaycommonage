@@ -130,8 +130,10 @@ function PreviewThumb({
 export default async function CommonerUploadsPage({
   searchParams,
 }: {
-  searchParams?: { missing?: string };
+  searchParams?: Promise<{ missing?: string }>;
 }) {
+  const sp = (await searchParams) ?? {};
+
   const { userId } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/portal/commoner/uploads");
 
@@ -148,7 +150,6 @@ export default async function CommonerUploadsPage({
   });
   if (!commoner) redirect("/portal/register/commoner");
 
-  // ✅ compute missing required docs (for banner + for gating UX)
   const docs = await getCommonerDocsStatus(commoner.id);
 
   // group attachments
@@ -160,8 +161,7 @@ export default async function CommonerUploadsPage({
     byKind.set(a.kind, (byKind.get(a.kind) ?? 0) + 1);
   }
 
-  const showMissingBanner =
-    searchParams?.missing === "1" || searchParams?.missing === "true";
+  const showMissingBanner = sp.missing === "1" || sp.missing === "true";
 
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-slate-50">
