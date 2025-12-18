@@ -1,52 +1,46 @@
+// app/admin/settings/page.tsx
+import { getAdminGate } from "@/lib/authz";
+import { redirect } from "next/navigation";
 import { getLandApplicationsSetting } from "@/lib/settings";
-import { updateLandApplications } from "./actions";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import LandApplicationsToggle from "./toggle.client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function AdminSettingsPage() {
-  const setting = await getLandApplicationsSetting();
+  const gate = await getAdminGate();
+  if (!gate.signedIn) redirect("/sign-in?redirect_url=/admin/settings");
+  if (!gate.ok) redirect("/forbidden");
+
+  const { open, updatedAt } = await getLandApplicationsSetting();
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Settings</h1>
+      <div className="rounded-2xl border bg-white/80 p-5 shadow-sm">
+        <h2 className="text-lg font-semibold">Site Settings</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Control site-wide features like whether land applications are open.
+        </p>
+      </div>
 
-      <Card className="rounded-2xl">
-        <CardHeader>
-          <CardTitle>Land applications</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between gap-4">
-          <div className="text-sm text-slate-700">
-            <div className="font-medium">
-              {setting.open ? "Open" : "Closed"}
-            </div>
-            <div className="text-xs text-slate-500">
-              When closed, users can still register as commoners, but cannot
-              start land applications.
-            </div>
+      <div className="rounded-2xl border bg-white/80 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold">Land applications</h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Turn this off when the Committee is not accepting land
+              applications.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Last updated:{" "}
+              {updatedAt ? new Date(updatedAt).toLocaleString() : "—"}
+            </p>
           </div>
 
-          {/* Server action via <form> so we stay simple */}
-          <form
-            action={async (fd: FormData) => {
-              "use server";
-              const open = fd.get("open") === "on";
-              await updateLandApplications(open);
-            }}>
-            <div className="flex items-center gap-3">
-              <Switch name="open" defaultChecked={setting.open} />
-              <button
-                type="submit"
-                className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white">
-                Save
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          <LandApplicationsToggle initialOpen={open} />
+        </div>
+      </div>
     </div>
   );
 }

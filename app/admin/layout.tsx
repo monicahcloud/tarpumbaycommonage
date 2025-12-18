@@ -23,11 +23,14 @@ export default async function AdminLayout({
         <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
           <h1 className="font-semibold">Admin Page</h1>
           <nav className="text-sm flex gap-4">
+            <Link href="/admin/commoners" className="hover:underline">
+              Commoners
+            </Link>
             <Link href="/admin/applications" className="hover:underline">
               Applications
             </Link>
-            <Link href="/admin/commoners" className="hover:underline">
-              Commoners
+            <Link href="/admin/settings" className="hover:underline">
+              Settings
             </Link>
           </nav>
         </div>
