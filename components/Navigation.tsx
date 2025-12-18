@@ -25,7 +25,7 @@ export default function Navigation() {
   const closeMenu = () => setIsMenuOpen(false);
 
   const signedInLinks = [
-    { href: "/documents", label: "Bylaws & Documents" },
+    { href: "/documents", label: "Documents & Minutes" },
     // { href: "/news", label: "News & Announcements" },
     // { href: "/events", label: "Upcoming Events/Meetings" },
   ];

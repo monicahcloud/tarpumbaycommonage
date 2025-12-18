@@ -269,6 +269,7 @@ model Document {
   contentType String?
   size        Int?
   pinned      Boolean     @default(false)
+  blobPath    String? 
   status      DocStatus   @default(PUBLISHED)
   createdAt   DateTime    @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime    @default(now()) @updatedAt @db.Timestamptz(6)

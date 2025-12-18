@@ -1,146 +1,85 @@
-// app/(admin)/admin/documents/page.tsx
-"use client";
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import NewDocumentForm from "./new.client";
+import DeleteButton from "./row-delete.client";
 
-import { useState } from "react";
-import type { DocStatus, DocCategory } from "@prisma/client";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default function AdminDocumentsPage() {
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<DocCategory>("OTHER");
-  const [tags, setTags] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [pinned, setPinned] = useState(false);
-  const [status, setStatus] = useState<DocStatus>("PUBLISHED");
-  const [busy, setBusy] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!file) return alert("Choose a file");
-    setBusy(true);
-
-    const form = new FormData();
-    form.set("title", title);
-    form.set("slug", slug || title);
-    form.set("description", description);
-    form.set("category", category);
-    form.set("tags", tags);
-    form.set("pinned", String(pinned));
-    form.set("status", status);
-    form.set("file", file);
-
-    const res = await fetch("/api/admin/documents", {
-      method: "POST",
-      body: form,
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      alert(`Failed: ${data.error || res.status}`);
-      return;
-    }
-    alert("Saved!");
-    setTitle("");
-    setSlug("");
-    setDescription("");
-    setTags("");
-    setFile(null);
-    setPinned(false);
-    setStatus("PUBLISHED");
-  }
+export default async function AdminDocumentsPage() {
+  const docs = await prisma.document.findMany({
+    orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
+  });
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-bold">Documents — Admin Upload</h1>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <div className="space-y-6">
+      <div className="flex items-end justify-between">
         <div>
-          <label className="block text-sm font-medium">Title</label>
-          <input
-            className="mt-1 w-full rounded border p-2"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
+          <h1 className="text-2xl font-bold">Documents</h1>
+          <p className="text-sm text-slate-600">
+            Upload and publish bylaws, minutes, forms, etc.
+          </p>
         </div>
-        <div>
-          <label className="block text-sm font-medium">Slug (optional)</label>
-          <input
-            className="mt-1 w-full rounded border p-2"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="auto from title"
-          />
+        <Link href="/admin" className="text-sm text-slate-600 hover:underline">
+          Back
+        </Link>
+      </div>
+
+      <div className="rounded-2xl border bg-white/80 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold">Upload new</h2>
+        <div className="mt-3">
+          <NewDocumentForm />
         </div>
-        <div>
-          <label className="block text-sm font-medium">Description</label>
-          <textarea
-            className="mt-1 w-full rounded border p-2"
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+      </div>
+
+      <div className="rounded-2xl border bg-white/80 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold">All documents</h2>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[860px] text-left text-sm">
+            <thead className="bg-slate-50 text-xs text-slate-600">
+              <tr>
+                <th className="px-3 py-2 font-medium">Title</th>
+                <th className="px-3 py-2 font-medium">Category</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Pinned</th>
+                <th className="px-3 py-2 font-medium">Updated</th>
+                <th className="px-3 py-2 font-medium"></th>
+                <th className="px-3 py-2 font-medium w-[1%]"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {docs.map((d) => (
+                <tr key={d.id} className="hover:bg-slate-50/60">
+                  <td className="px-3 py-3">{d.title}</td>
+                  <td className="px-3 py-3">{d.category}</td>
+                  <td className="px-3 py-3">{d.status}</td>
+                  <td className="px-3 py-3">{d.pinned ? "Yes" : "No"}</td>
+                  <td className="px-3 py-3">
+                    {new Date(d.updatedAt).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-3">
+                    <a
+                      className="text-blue-700 hover:underline"
+                      href={d.fileUrl}
+                      target="_blank"
+                      rel="noreferrer">
+                      Download
+                    </a>
+                  </td>
+                  <td className="px-3 py-3">
+                     <DeleteButton id={d.id} />{" "}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {docs.length === 0 ? (
+            <div className="p-6 text-sm text-slate-600">No documents yet.</div>
+          ) : null}
         </div>
-        <div>
-          <label className="block text-sm font-medium">Category</label>
-          <select
-            className="mt-1 w-full rounded border p-2"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as DocCategory)}>
-            <option>BYLAWS</option>
-            <option>POLICY</option>
-            <option>FORM</option>
-            <option>MEETING_MINUTES</option>
-            <option>GUIDE</option>
-            <option>OTHER</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium">
-            Tags (comma-separated)
-          </label>
-          <input
-            className="mt-1 w-full rounded border p-2"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="fees,members,2025"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">File</label>
-          <input
-            type="file"
-            className="mt-1 w-full rounded border p-2"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
-        </div>
-        <div className="flex items-center gap-6">
-          <label className="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={pinned}
-              onChange={(e) => setPinned(e.target.checked)}
-            />
-            <span>Pin to top</span>
-          </label>
-          <label className="text-sm">
-            Status:
-            <select
-              className="ml-2 rounded border p-1"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as DocStatus)}>
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
-          </label>
-        </div>
-        <button
-          disabled={busy}
-          className="rounded-xl bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-60">
-          {busy ? "Uploading..." : "Save"}
-        </button>
-      </form>
-    </main>
+      </div>
+    </div>
   );
 }
