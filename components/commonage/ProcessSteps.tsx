@@ -1,7 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
 import { fadeUp } from "./motion";
-import { FileCheck2 } from "lucide-react";
 
 export function ProcessSteps() {
   const steps = [
@@ -22,32 +21,35 @@ export function ProcessSteps() {
       d: "Receive outcome, conditions, and guidance on use.",
     },
   ];
+
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
-      <motion.h2 {...fadeUp} className="text-3xl font-bold text-center">
-        How Allocation Works
-      </motion.h2>
-      <ol className="mx-auto mt-8 grid gap-6 md:grid-cols-4">
+    <section className="mx-auto max-w-7xl px-6 ">
+      <div className="text-center mb-16">
+        <h2 className="text-4xl font-black text-slate-900">
+          The Allocation Journey
+        </h2>
+        <p className="text-slate-500 mt-4">
+          A transparent, four-step process to secure your rights.
+        </p>
+      </div>
+
+      <ol className="grid gap-12 md:grid-cols-4">
         {steps.map((s, i) => (
           <motion.li
             key={i}
             {...fadeUp}
-            className="relative rounded-2xl border bg-white p-6 shadow-sm">
-            <div className="absolute -top-3 left-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-sm font-bold shadow">
+            className="relative p-8 rounded-[2rem] bg-white border border-slate-200 shadow-sm flex flex-col items-center text-center">
+            <span className="text-6xl font-black text-slate-100 absolute top-4 left-4 -z-10 group-hover:text-blue-50 transition-colors">
+              0{i + 1}
+            </span>
+            <div className="h-12 w-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-6 shadow-lg shadow-blue-200">
               {i + 1}
             </div>
-            <h3 className="mt-3 font-semibold">{s.t}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{s.d}</p>
+            <h3 className="font-bold text-slate-900 mb-2">{s.t}</h3>
+            <p className="text-sm text-slate-500 leading-relaxed">{s.d}</p>
           </motion.li>
         ))}
       </ol>
-      <div className="mt-8 text-center">
-        <a
-          href="/portal/apply"
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-white font-semibold shadow hover:bg-primary/90">
-          Start Application <FileCheck2 className="h-4 w-4" />
-        </a>
-      </div>
     </section>
   );
 }

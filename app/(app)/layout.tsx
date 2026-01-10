@@ -1,4 +1,3 @@
-// app/(app)/portal/layout.tsx
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { ensureUser } from "@/lib/ensureUser";
 import { prisma } from "@/lib/prisma";
@@ -28,25 +27,20 @@ export default async function PortalLayout({
   await ensureUser();
   const clerkUser = await currentUser();
 
-  // DB user
   const me = await prisma.user.findUnique({
     where: { clerkId: userId },
     select: { id: true },
   });
 
-  // If user row is missing for some reason, still render children;
-  // most pages will redirect accordingly.
   if (!me) {
     return <main className="p-4 md:p-8">{children}</main>;
   }
 
-  // Commoner reg status
   const reg = await prisma.commonerRegistration.findUnique({
     where: { userId: me.id },
     select: { id: true, status: true },
   });
 
-  // Application (1:1 in your schema)
   const app = await prisma.application.findUnique({
     where: { userId: me.id },
     select: { id: true },
@@ -54,9 +48,7 @@ export default async function PortalLayout({
 
   const isApprovedCommoner = reg?.status === "APPROVED";
 
-  // ✅ Determine which uploads link to show (this is the “desktop behavior”)
   const uploadNav: UploadNav = (() => {
-    // If they have a commoner registration but it’s not approved yet -> show commoner uploads
     if (reg && reg.status !== "APPROVED") {
       return {
         show: true,
@@ -64,8 +56,6 @@ export default async function PortalLayout({
         label: "Commoner Uploads",
       };
     }
-
-    // If commoner is approved and an application exists -> show application uploads
     if (isApprovedCommoner && app?.id) {
       return {
         show: true,
@@ -73,20 +63,17 @@ export default async function PortalLayout({
         label: "Application Uploads",
       };
     }
-
-    // Otherwise: don’t show uploads in nav (keeps it clean)
     return { show: false, href: "/portal", label: "Manage Uploads" };
   })();
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-white text-slate-900">
-      {/* Mobile header */}
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
+      {/* Mobile header - Fluid width */}
       <div className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur md:hidden">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
-          <Link href="/portal" className="text-xl font-semibold">
+        <div className="flex h-16 w-full items-center justify-between px-6">
+          <Link href="/portal" className="text-xl font-bold tracking-tight">
             Member Portal
           </Link>
-
           <MobileNav
             uploadsHref={uploadNav.href}
             uploadsLabel={uploadNav.label}
@@ -95,38 +82,40 @@ export default async function PortalLayout({
         </div>
       </div>
 
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 md:grid-cols-[260px_1fr]">
+      {/* Main Grid: Increased sidebar width and removed tight max-width */}
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 md:grid-cols-[280px_1fr]">
         {/* Sidebar (desktop) */}
-        <aside className="sticky top-0 hidden h-[100dvh] border-r bg-white/70 backdrop-blur md:block">
-          <div className="p-5">
-            <Link href="/portal" className="block text-center">
-              <h1 className="text-3xl font-semibold tracking-tight">
+        <aside className="sticky top-0 hidden h-dvh border-r border-slate-200 bg-white md:block">
+          <div className="flex h-full flex-col p-6">
+            <Link href="/portal" className="mb-8 block">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                 Member Portal
               </h1>
-              <p className="mt-0.5 text-md text-slate-500">
+              <p className="text-xs font-medium uppercase tracking-widest text-slate-400">
                 Tarpum Bay Commonage
               </p>
             </Link>
 
-            {/* Avatar */}
-            <div className="mx-auto flex flex-col items-center gap-2 py-5">
-              <div className="h-24 w-24 overflow-hidden rounded-full ring-2 ring-purple-500/20 shadow-md">
+            {/* Avatar Section - More spaced out */}
+            <div className="mb-10 flex flex-col items-center gap-4 rounded-2xl bg-slate-50 py-6 ring-1 ring-slate-200/50">
+              <div className="relative h-20 w-20 overflow-hidden rounded-full ring-4 ring-white shadow-sm">
                 <Image
                   src={clerkUser?.imageUrl ?? "/avatar-fallback.png"}
                   alt={clerkUser?.fullName ?? "User avatar"}
                   className="h-full w-full object-cover"
-                  width={96}
-                  height={96}
+                  width={80}
+                  height={80}
                 />
               </div>
-              {clerkUser?.fullName ? (
-                <div className="text-lg font-medium text-slate-700">
-                  {clerkUser.fullName}
-                </div>
-              ) : null}
+              <div className="text-center">
+                <p className="text-sm font-semibold text-slate-900">
+                  {clerkUser?.fullName ?? "Welcome"}
+                </p>
+                <p className="text-xs text-slate-500">Member Account</p>
+              </div>
             </div>
 
-            <nav className="mt-2 space-y-1 text-base">
+            <nav className="flex-1 space-y-1.5">
               <NavItem
                 href="/portal"
                 icon={<LayoutDashboard className="h-5 w-5" />}>
@@ -147,11 +136,18 @@ export default async function PortalLayout({
                 </NavItem>
               )}
             </nav>
+
+            <div className="mt-auto pt-6 border-t border-slate-100">
+              {/* Sign out or settings can go here */}
+              <p className="text-[10px] text-slate-400 text-center uppercase tracking-tighter">
+                Support: support@tarpumbay.com
+              </p>
+            </div>
           </div>
         </aside>
 
-        {/* Main */}
-        <main className="p-4 md:p-8">{children}</main>
+        {/* Main Content: Padding increased for better "breathability" */}
+        <main className="min-h-screen p-6 lg:p-12">{children}</main>
       </div>
     </div>
   );
@@ -169,8 +165,8 @@ function NavItem({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100">
-      {icon}
+      className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]">
+      <span className="text-slate-400">{icon}</span>
       <span>{children}</span>
     </Link>
   );

@@ -191,10 +191,10 @@ export default function ApplyFormClient() {
   // ------------- Success -------------
   if (applicationId) {
     return (
-      <div className="min-h-[60vh] bg-gradient-to-b from-white to-slate-50">
+      <div className="min-h-[60vh] bg-linear-to-b from-white to-slate-50">
         <div className="mx-auto grid max-w-6xl gap-6 p-6 md:grid-cols-[3fr_2fr]">
           <div className="relative overflow-hidden rounded-2xl border bg-white/80 p-6 shadow-sm">
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
             <h1 className="text-2xl font-bold tracking-tight">
               Application Submitted
             </h1>
@@ -223,7 +223,7 @@ export default function ApplyFormClient() {
 
   // ------------- Form -------------
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+    <div className="min-h-screen bg-linear-to-b from-white to-slate-50">
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(79,70,229,0.08),rgba(6,182,212,0.08)_40%,transparent_60%)]" />
@@ -241,7 +241,7 @@ export default function ApplyFormClient() {
       <div className="mx-auto grid max-w-6xl gap-6 px-6 pb-16 md:grid-cols-[3fr_2fr]">
         {/* Main Card */}
         <div className="relative overflow-hidden rounded-2xl border bg-white/80 p-6 shadow-sm">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-70" />
 
           {/* Stepper */}
           <Stepper step={step} />
@@ -476,8 +476,8 @@ export default function ApplyFormClient() {
                       <>
                         I understand that if my lot remains undeveloped and not
                         maintained after eighteen (18) months, it will be
-                        returned to the pool and reissued when I confirm I’m
-                        prepared to proceed.
+                        returned to the pool and reissued when I confirm
+                        I&apos;m prepared to proceed.
                       </>
                     }
                     error={errors.acknowledgeReissue?.message}
@@ -615,7 +615,7 @@ function SectionTitle({
   return (
     <div className="flex items-center gap-2">
       {icon ? (
-        <div className="rounded-xl bg-gradient-to-br from-cyan-500/15 to-purple-500/15 p-2 ring-1 ring-border">
+        <div className="rounded-xl bg-linear-to-br from-cyan-500/15 to-purple-500/15 p-2 ring-1 ring-border">
           {icon}
         </div>
       ) : null}
@@ -674,7 +674,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 | 4 }) {
       </div>
       <div className="h-1.5 w-full rounded-full bg-slate-100">
         <div
-          className="h-1.5 rounded-full bg-gradient-to-r from-purple-500 via-cyan-500 to-blue-500"
+          className="h-1.5 rounded-full bg-linear-to-r from-purple-500 via-cyan-500 to-blue-500"
           style={{ width: `${pct}%` }}
         />
       </div>

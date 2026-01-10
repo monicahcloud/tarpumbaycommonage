@@ -21,31 +21,36 @@ export function WhatWeDo() {
       Icon: Landmark,
     },
   ];
+
   return (
-    <section className="mx-auto max-w-6xl px-6 pb-6">
-      <motion.h2 {...fadeUp} className="text-3xl font-bold text-center">
-        What We Do
-      </motion.h2>
-      <motion.div
-        variants={stagger}
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
-        className="mt-10 grid gap-6 md:grid-cols-3">
-        {cards.map(({ title, desc, Icon }, i) => (
-          <motion.div
-            key={i}
-            variants={fadeUp}
-            whileHover={{ y: -4 }}
-            className="group rounded-2xl border bg-white p-7 shadow-sm transition">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Icon className="h-6 w-6" />
-            </div>
-            <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
-          </motion.div>
-        ))}
-      </motion.div>
+    <section className=" bg-slate-50">
+      <div className="max-w-7xl mx-auto px-6">
+        <motion.h2
+          {...fadeUp}
+          className="text-4xl font-black text-slate-900 text-center mb-16">
+          Our Responsibilities
+        </motion.h2>
+        <motion.div
+          variants={stagger}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          className="grid gap-6 md:grid-cols-3">
+          {cards.map(({ title, desc, Icon }, i) => (
+            <motion.div
+              key={i}
+              variants={fadeUp}
+              whileHover={{ y: -10 }}
+              className="group relative rounded-3xl bg-white p-10 shadow-sm border border-slate-100 transition-all hover:shadow-2xl">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                <Icon className="h-7 w-7" />
+              </div>
+              <h3 className="mt-6 text-xl font-bold text-slate-900">{title}</h3>
+              <p className="mt-3 text-slate-500 leading-relaxed">{desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
     </section>
   );
 }
