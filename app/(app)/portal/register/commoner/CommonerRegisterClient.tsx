@@ -484,6 +484,12 @@ export default function CommonerRegisterClient({
               <li>
                 Commoner Registration: <strong>$25 (non-refundable)</strong>
               </li>
+              <p className="mt-3 text-sm font-bold mb-2 items-center justify-center text-center">
+                Payments: Tarpum Bay Commonage No. 10419388,
+                <br />
+                Acct # 1350006680 — Bank of the Bahamas, Rock Sound (Branch #
+                03153).
+              </p>
             </ul>
           </div>
           <div className="rounded-2xl border bg-white/80 p-5 shadow-sm">

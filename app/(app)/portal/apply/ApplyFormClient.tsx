@@ -736,7 +736,7 @@ function AsidePanel() {
             Commercial Lot Fee: <strong>To be advised based on lot size</strong>
           </li>
         </ul>
-        <p className="mt-3 text-xs text-slate-600">
+        <p className="mt-3 text-sm font-bold text-center">
           Payments: Tarpum Bay Commonage No. 10419388,
           <br />
           Acct # 1350006680 — Bank of the Bahamas, Rock Sound (Branch # 03153).

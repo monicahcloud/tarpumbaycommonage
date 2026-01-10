@@ -120,7 +120,7 @@ export default async function CommonerStatusPage() {
             </div>
           )}
 
-          {existingApp && (
+          {/* {existingApp && (
             <div className="mt-3 text-sm text-slate-600">
               You already started an application.{" "}
               <Link
@@ -130,7 +130,7 @@ export default async function CommonerStatusPage() {
               </Link>
               .
             </div>
-          )}
+          )} */}
         </section>
 
         {/* info panel */}
@@ -140,6 +140,7 @@ export default async function CommonerStatusPage() {
             <li>
               Ensure your contact details are current for Committee follow-ups.
             </li>
+
             <li>
               Once approved, you can apply for land or add your existing lot
               details.
@@ -163,7 +164,13 @@ export default async function CommonerStatusPage() {
               </a>{" "}
               before applying.
             </li>
-          </ul>
+          </ul>{" "}
+          <p className="mt-3 text-md font-bold text-center">
+            Payments: Tarpum Bay Commonage No. 10419388,
+            <br />
+            Acct # 1350006680 — Bank of the Bahamas, Rock Sound (Branch #
+            03153).
+          </p>
         </section>
       </main>
     </div>
